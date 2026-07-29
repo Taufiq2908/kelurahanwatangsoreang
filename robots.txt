@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://kelurahanwatangsoreang.web.id/sitemap.xml
