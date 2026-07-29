@@ -51,11 +51,11 @@ export default function ClimateCard({ article, index = 0, featured = false }) {
               </span>
             </div>
           </div>
-          <div className="p-4">
-            <h2 className="text-base font-extrabold text-surface-900 leading-snug mb-2 group-hover:text-primary-700 transition-colors line-clamp-2">
+          <div className="p-4 overflow-hidden">
+            <h2 className="text-base font-extrabold text-surface-900 leading-snug mb-2 group-hover:text-primary-700 transition-colors line-clamp-2 break-words">
               {article.title}
             </h2>
-            <p className="text-xs text-surface-500 leading-relaxed line-clamp-2 mb-3">{article.description || "Tidak ada deskripsi tersedia."}</p>
+            <p className="text-xs text-surface-500 leading-relaxed line-clamp-2 mb-3 break-words">{article.description || "Tidak ada deskripsi tersedia."}</p>
             <div className="flex items-center gap-4 text-surface-400">
               <span className="flex items-center gap-1 text-xs">
                 <Calendar className="w-3.5 h-3.5" />
@@ -89,7 +89,7 @@ export default function ClimateCard({ article, index = 0, featured = false }) {
             <span className={`badge ${colors.bg} ${colors.text} text-[10px] font-semibold px-2 py-0.5 mb-1.5 inline-block`}>
               {article.category || 'Edukasi'}
             </span>
-            <h3 className="text-sm font-bold text-surface-900 leading-snug mb-1 group-hover:text-primary-700 transition-colors line-clamp-2">
+            <h3 className="text-sm font-bold text-surface-900 leading-snug mb-1 group-hover:text-primary-700 transition-colors line-clamp-2 break-words">
               {article.title}
             </h3>
             <div className="flex items-center gap-3 text-surface-400">

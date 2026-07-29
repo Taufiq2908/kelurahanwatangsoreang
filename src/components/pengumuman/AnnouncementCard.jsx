@@ -54,7 +54,7 @@ export default function AnnouncementCard({ item, index = 0, showDetail = true })
 
           {/* Title */}
           <h3
-            className={`text-base md:text-lg font-bold leading-snug mb-3 line-clamp-2 ${
+            className={`text-base md:text-lg font-bold leading-snug mb-3 line-clamp-2 break-words ${
               isImportant ? 'text-rose-950' : 'text-surface-900'
             }`}
           >
@@ -62,7 +62,7 @@ export default function AnnouncementCard({ item, index = 0, showDetail = true })
           </h3>
 
           {/* Content preview */}
-          <p className="text-sm text-surface-600 leading-relaxed line-clamp-2 mb-6">
+          <p className="text-sm text-surface-600 leading-relaxed line-clamp-2 mb-6 break-words">
             {(item.description || item.content || '').replace(/\n/g, ' ').substring(0, 160)}...
           </p>
 

@@ -92,7 +92,7 @@ export default function AnnouncementPreview() {
                       </>
                     )}
                   </div>
-                  <h3 className={`text-base md:text-lg font-bold leading-snug transition-colors duration-300 ${textColor} group-hover:text-emerald-700`}>
+                  <h3 className={`text-base md:text-lg font-bold leading-snug transition-colors duration-300 ${textColor} group-hover:text-emerald-700 break-words`}>
                     {item.title}
                   </h3>
                 </Link>

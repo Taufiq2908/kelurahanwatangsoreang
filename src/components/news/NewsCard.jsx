@@ -45,8 +45,8 @@ export function NewsCardFeatured({ article, index = 0 }) {
             </span>
           </div>
         </div>
-        <div className="p-5">
-          <h2 className="text-base font-bold text-surface-900 leading-snug mb-2 group-hover:text-primary-700 transition-colors line-clamp-2">
+        <div className="p-5 overflow-hidden">
+          <h2 className="text-base font-bold text-surface-900 leading-snug mb-2 group-hover:text-primary-700 transition-colors line-clamp-2 break-words">
             {article.title}
           </h2>
           <p className="text-xs text-surface-500 leading-relaxed line-clamp-3 mb-3">{article.description || "Tidak ada deskripsi tersedia."}</p>
@@ -103,8 +103,8 @@ export default function NewsCard({ article, index = 0 }) {
           </div>
         </div>
         
-        <div className="p-5 flex flex-col flex-1">
-          <h3 className="text-base font-bold text-surface-900 leading-snug group-hover:text-emerald-700 transition-colors mb-2 line-clamp-2">
+        <div className="p-5 flex flex-col flex-1 overflow-hidden">
+          <h3 className="text-base font-bold text-surface-900 leading-snug group-hover:text-emerald-700 transition-colors mb-2 line-clamp-2 break-words">
             {article.title}
           </h3>
           <p className="text-sm text-surface-500 leading-relaxed line-clamp-2 mb-4 flex-1">

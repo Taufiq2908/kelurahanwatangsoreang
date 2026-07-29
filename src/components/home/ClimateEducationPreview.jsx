@@ -40,10 +40,10 @@ export default function ClimateEducationPreview() {
                     {article.category}
                   </span>
                 </div>
-                <h3 className="text-xl md:text-2xl font-extrabold text-surface-900 group-hover:text-emerald-700 transition-colors mb-2.5 leading-snug tracking-tight">
+                <h3 className="text-xl md:text-2xl font-extrabold text-surface-900 group-hover:text-emerald-700 transition-colors mb-2.5 leading-snug tracking-tight break-words">
                   {article.title}
                 </h3>
-                <p className="text-sm text-surface-600 line-clamp-2 leading-relaxed font-medium">
+                <p className="text-sm text-surface-600 line-clamp-2 leading-relaxed font-medium break-words">
                   {article.description || "Tidak ada deskripsi tersedia."}
                 </p>
                 <div className="mt-6 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-emerald-700 group-hover:text-emerald-800 transition-colors">
