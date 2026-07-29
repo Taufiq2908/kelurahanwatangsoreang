@@ -1,0 +1,169 @@
+<script>
+window.Module_Dashboard = {
+  render: async function(container) {
+    try {
+    container.innerHTML = `
+      <section class="fade-in">
+        <div class="flex justify-between items-end mb-8 border-b border-surface-200 pb-6">
+          <div>
+            <p class="text-xs font-bold text-emerald-600 tracking-wider uppercase mb-1">Dashboard</p>
+            <h1 class="text-3xl font-extrabold text-surface-900 tracking-tight">Ringkasan Sistem</h1>
+            <p class="text-sm text-surface-500 mt-2">Ikhtisar aktivitas dan data CMS Kelurahan Watang Soreang.</p>
+          </div>
+        </div>
+        
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-10" id="dash-summary">
+          <!-- Stats will be loaded here -->
+        </div>
+        
+        <section class="mt-8">
+          <h2 class="text-lg font-bold text-surface-900 mb-6">Aksi Cepat</h2>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <button class="flex flex-col items-center justify-center p-6 bg-white border border-surface-200 hover:border-emerald-500 hover:shadow-md rounded-2xl transition-all text-surface-700 hover:text-emerald-700 font-semibold" onclick="window.navigate('berita', 'create')">
+              <span class="material-icons-outlined text-3xl mb-3 text-emerald-500">post_add</span>
+              Tulis Berita Baru
+            </button>
+            <button class="flex flex-col items-center justify-center p-6 bg-white border border-surface-200 hover:border-emerald-500 hover:shadow-md rounded-2xl transition-all text-surface-700 hover:text-emerald-700 font-semibold" onclick="window.navigate('pengumuman', 'create')">
+              <span class="material-icons-outlined text-3xl mb-3 text-emerald-500">campaign</span>
+              Buat Pengumuman
+            </button>
+            <button class="flex flex-col items-center justify-center p-6 bg-white border border-surface-200 hover:border-emerald-500 hover:shadow-md rounded-2xl transition-all text-surface-700 hover:text-emerald-700 font-semibold" onclick="window.navigate('laporan')">
+              <span class="material-icons-outlined text-3xl mb-3 text-emerald-500">inbox</span>
+              Tinjau Laporan
+            </button>
+            <button class="flex flex-col items-center justify-center p-6 bg-white border border-surface-200 hover:border-emerald-500 hover:shadow-md rounded-2xl transition-all text-surface-700 hover:text-emerald-700 font-semibold" onclick="window.navigate('faq')">
+              <span class="material-icons-outlined text-3xl mb-3 text-emerald-500">help_outline</span>
+              Kelola FAQ
+            </button>
+          </div>
+        </section>
+      </section>
+    `;
+
+
+
+      CMS_UI.showLoader('Memuat data dashboard...');
+      const [stats, logs, health] = await Promise.all([
+        window.CMS_API.getDashboardStats(),
+        window.CMS_API.getRecentLogs(5),
+        window.CMS_API.getSystemHealth()
+      ]);
+
+      const reportColor = stats.laporan > 0 ? 'text-rose-600 bg-rose-50 border-rose-200' : 'text-surface-500 bg-surface-50 border-surface-100';
+      
+      const summaryContainer = document.getElementById('dash-summary');
+      if (!summaryContainer) {
+        return;
+      }
+      
+      summaryContainer.innerHTML = `
+        <div class="bg-white border border-surface-200 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-emerald-300 transition-all">
+          <div class="flex items-center gap-3 mb-2">
+            <span class="material-icons-outlined text-emerald-500">article</span>
+            <span class="text-xs md:text-sm font-bold text-surface-500 uppercase tracking-wider">Total Berita</span>
+          </div>
+          <strong class="block text-3xl md:text-4xl font-black text-surface-900 mb-4">${stats.berita}</strong>
+          <span class="inline-block px-3 py-1 bg-emerald-50 text-emerald-700 text-xs font-bold rounded-full border border-emerald-200">
+            Publikasi
+          </span>
+        </div>
+        
+        <div class="bg-white border border-surface-200 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-emerald-300 transition-all">
+          <div class="flex items-center gap-3 mb-2">
+            <span class="material-icons-outlined text-emerald-500">campaign</span>
+            <span class="text-xs md:text-sm font-bold text-surface-500 uppercase tracking-wider">Pengumuman</span>
+          </div>
+          <strong class="block text-3xl md:text-4xl font-black text-surface-900 mb-4">${stats.pengumuman}</strong>
+          <span class="inline-block px-3 py-1 bg-blue-50 text-blue-700 text-xs font-bold rounded-full border border-blue-200">
+            Terpublikasi
+          </span>
+        </div>
+        
+        <div class="bg-white border border-surface-200 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-emerald-300 transition-all">
+          <div class="flex items-center gap-3 mb-2">
+            <span class="material-icons-outlined text-emerald-500">inbox</span>
+            <span class="text-xs md:text-sm font-bold text-surface-500 uppercase tracking-wider">Laporan</span>
+          </div>
+          <strong class="block text-3xl md:text-4xl font-black text-surface-900 mb-4">${stats.laporan}</strong>
+          <span class="inline-block px-3 py-1 text-xs font-bold rounded-full border ${reportColor}">
+            Tersimpan
+          </span>
+        </div>
+        
+        <div class="bg-white border border-surface-200 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-emerald-300 transition-all">
+          <div class="flex items-center gap-3 mb-2">
+            <span class="material-icons-outlined text-emerald-500">assignment</span>
+            <span class="text-xs md:text-sm font-bold text-surface-500 uppercase tracking-wider">Total Layanan</span>
+          </div>
+          <strong class="block text-3xl md:text-4xl font-black text-surface-900 mb-4">${stats.layanan}</strong>
+          <span class="inline-block px-3 py-1 bg-amber-50 text-amber-700 text-xs font-bold rounded-full border border-amber-200">
+            Layanan Aktif
+          </span>
+        </div>
+      `;
+      
+            const safeLogs = logs || [];
+        const reportsHtml = safeLogs.map(r => `
+          <div class="flex items-center justify-between p-4 border-b border-surface-200 last:border-0 hover:bg-surface-50">
+          <div>
+            <div class="font-semibold text-surface-900">${r.action} - ${r.module}</div>
+            <div class="text-xs text-surface-500">${new Date(r.timestamp).toLocaleString('id-ID')} | ${r.message}</div>
+          </div>
+          <span class="px-2 py-1 text-xs font-bold rounded border ${r.level === 'ERROR' ? 'bg-rose-50 text-rose-700 border-rose-200' : (r.level === 'INFO' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200')}">
+            ${r.level}
+          </span>
+        </div>
+      `).join('');
+      
+      const dashboardHtml = document.getElementById('dash-summary').parentElement;
+      if (!document.getElementById('recent-activities')) {
+        const activitiesSection = document.createElement('section');
+        activitiesSection.id = 'recent-activities';
+        activitiesSection.className = 'mt-10 grid grid-cols-1 md:grid-cols-2 gap-8';
+        activitiesSection.innerHTML = `
+          <div class="bg-white border border-surface-200 rounded-2xl shadow-sm overflow-hidden">
+            <div class="bg-surface-50 border-b border-surface-200 px-6 py-4 flex justify-between items-center">
+              <h3 class="font-bold text-surface-900">Log Aktivitas Terbaru</h3>
+            </div>
+            <div class="p-2">
+              ${reportsHtml || '<div class="p-4 text-center text-surface-500">Belum ada aktivitas</div>'}
+            </div>
+          </div>
+          <div class="bg-white border border-surface-200 rounded-2xl shadow-sm overflow-hidden">
+            <div class="bg-surface-50 border-b border-surface-200 px-6 py-4">
+              <h3 class="font-bold text-surface-900">Status Sistem (Asinkron)</h3>
+            </div>
+            <div class="p-6 space-y-4">
+              <div class="flex justify-between items-center border-b border-surface-200 pb-3">
+                <span class="text-surface-600">Google Apps Script</span>
+                <span class="flex items-center font-semibold ${health.apps_script === 'OK' ? 'text-emerald-600' : 'text-rose-600'}">
+                  <span class="w-2 h-2 rounded-full mr-2 ${health.apps_script === 'OK' ? 'bg-emerald-500' : 'bg-rose-500'}"></span>${health.apps_script}
+                </span>
+              </div>
+              <div class="flex justify-between items-center border-b border-surface-200 pb-3">
+                <span class="text-surface-600">Google Sheets Database</span>
+                <span class="flex items-center font-semibold ${health.google_sheets === 'OK' ? 'text-emerald-600' : 'text-rose-600'}">
+                  <span class="w-2 h-2 rounded-full mr-2 ${health.google_sheets === 'OK' ? 'bg-emerald-500' : 'bg-rose-500'}"></span>${health.google_sheets}
+                </span>
+              </div>
+              <div class="flex justify-between items-center pb-3">
+                <span class="text-surface-600">Authentication Service</span>
+                <span class="flex items-center font-semibold ${health.auth === 'OK' ? 'text-emerald-600' : 'text-rose-600'}">
+                  <span class="w-2 h-2 rounded-full mr-2 ${health.auth === 'OK' ? 'bg-emerald-500' : 'bg-rose-500'}"></span>${health.auth}
+                </span>
+              </div>
+            </div>
+          </div>
+        `;
+        dashboardHtml.appendChild(activitiesSection);
+      }
+      CMS_UI.hideLoader();
+      console.log("EXIT Module_Dashboard.render");
+    } catch (e) {
+      CMS_UI.hideLoader();
+      console.error("Dashboard Render Error:", e);
+      window.CMS_UI.toast('Gagal memuat data dashboard', 'error');
+    }
+  }
+};
+</script>

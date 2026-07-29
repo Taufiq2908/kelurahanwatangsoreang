@@ -1,0 +1,374 @@
+<script>
+window.Module_Berita = (function() {
+  let state = {
+    view: 'list', // 'list' or 'form'
+    items: [],
+    total: 0,
+    page: 1,
+    limit: 10,
+    search: '',
+    status: '',
+    currentId: null,
+    draftData: null
+  };
+
+  const getLocalDraft = () => {
+    try { return JSON.parse(localStorage.getItem('cms_draft_berita')); } catch(e) { return null; }
+  };
+  const saveLocalDraft = (data) => {
+    localStorage.setItem('cms_draft_berita', JSON.stringify(data));
+  };
+  const clearLocalDraft = () => {
+    localStorage.removeItem('cms_draft_berita');
+  };
+
+  async function loadData() {
+    try {
+      CMS_UI.showLoader('Memuat berita...');
+      const res = await CMS_API.getRecords('Berita', { page: state.page, limit: state.limit, search: state.search, status: state.status, sortBy: 'published_at', sortOrder: 'desc' });
+      state.items = res.items || [];
+      state.total = res.total || 0;
+      renderList();
+    } catch(e) {
+      console.error(e);
+      CMS_UI.toast('Error loadData: ' + e.message, 'error');
+      const el = document.getElementById('berita-content');
+      if (el) el.innerHTML = '<div style="color:red; padding:20px;">Error loadData: ' + e.message + '</div>';
+    } finally {
+      CMS_UI.hideLoader();
+    }
+  }
+
+  function renderList() {
+    const container = document.getElementById('berita-content');
+    if (!container) {
+      CMS_UI.toast('Error: container #berita-content tidak ditemukan!', 'error');
+      return;
+    }
+    
+    try {
+      let html = `
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+          <div class="flex flex-wrap gap-3 items-center w-full md:w-auto">
+            <input type="text" id="berita-search" class="w-full md:w-64 px-4 py-2 border border-surface-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none" placeholder="Cari judul..." value="${state.search}">
+            <select id="berita-filter" class="w-full md:w-40 px-4 py-2 border border-surface-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none bg-white">
+              <option value="">Semua Status</option>
+              <option value="publish" ${state.status==='publish'?'selected':''}>Publish</option>
+              <option value="draft" ${state.status==='draft'?'selected':''}>Draft</option>
+            </select>
+            <button class="px-4 py-2 bg-surface-100 hover:bg-surface-200 text-surface-700 text-sm font-semibold rounded-xl border border-surface-200 transition-colors w-full md:w-auto" id="berita-btn-search">Cari</button>
+          </div>
+          <button class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-xl shadow-sm transition-colors w-full md:w-auto flex justify-center items-center gap-2" id="berita-btn-create">
+            <span class="material-icons-outlined text-sm">add</span> Tulis Berita
+          </button>
+        </div>
+        
+        <div class="bg-white border border-surface-200 rounded-2xl overflow-hidden shadow-sm mb-6">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-surface-50 border-b border-surface-200 text-xs uppercase tracking-wider text-surface-500 font-bold">
+                  <th class="p-4">Judul</th>
+                  <th class="p-4 hidden md:table-cell">Kategori</th>
+                  <th class="p-4">Status</th>
+                  <th class="p-4 hidden sm:table-cell">Tanggal</th>
+                  <th class="p-4 text-right">Aksi</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-surface-100">
+      `;
+      
+      if (state.items.length === 0) {
+        html += `<tr><td colspan="5" class="p-12 text-center text-surface-500">Belum ada berita yang dipublikasikan.</td></tr>`;
+      } else {
+        html += state.items.map(item => `
+          <tr class="hover:bg-surface-50/50 transition-colors group">
+            <td class="p-4">
+              <p class="font-bold text-surface-900 text-sm md:text-base">${item.title}</p>
+            </td>
+            <td class="p-4 hidden md:table-cell text-sm text-surface-600">${item.category}</td>
+            <td class="p-4">
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${item.status === 'publish' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}">
+                ${item.status}
+              </span>
+            </td>
+            <td class="p-4 hidden sm:table-cell text-sm text-surface-500">
+              ${item.published_at ? new Date(item.published_at).toLocaleDateString('id-ID', {day:'numeric',month:'short',year:'numeric'}) : '-'}
+            </td>
+            <td class="p-4 text-right">
+              <div class="flex justify-end gap-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                <button class="btn-edit p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" data-id="${item.id}" title="Edit">
+                  <span class="material-icons-outlined text-[18px]">edit</span>
+                </button>
+                <button class="btn-delete p-2 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors" data-id="${item.id}" data-title="${item.title.replace(/"/g, '&quot;')}" title="Hapus">
+                  <span class="material-icons-outlined text-[18px]">delete</span>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `).join('');
+      }
+      
+      html += `
+              </tbody>
+            </table>
+          </div>
+          
+          <div class="p-4 border-t border-surface-100 bg-surface-50/50 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <p class="text-sm text-surface-500 font-medium">Halaman ${state.page} dari Total ${state.total} data</p>
+            <div class="flex gap-2">
+              <button class="px-4 py-2 bg-white border border-surface-200 rounded-lg text-sm font-semibold hover:bg-surface-50 disabled:opacity-50 disabled:cursor-not-allowed" id="berita-btn-prev" ${state.page <= 1 ? 'disabled' : ''}>Prev</button>
+              <button class="px-4 py-2 bg-white border border-surface-200 rounded-lg text-sm font-semibold hover:bg-surface-50 disabled:opacity-50 disabled:cursor-not-allowed" id="berita-btn-next" ${state.items.length < state.limit ? 'disabled' : ''}>Next</button>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      container.innerHTML = html;
+    } catch(e) {
+      console.error(e);
+      container.innerHTML = '<div style="color:red; padding:20px;">Error renderList: ' + e.message + '</div>';
+    }
+    
+    // Bind events
+    document.getElementById('berita-btn-create').onclick = () => showForm();
+    document.getElementById('berita-btn-search').onclick = () => {
+      state.search = document.getElementById('berita-search').value;
+      state.status = document.getElementById('berita-filter').value;
+      state.page = 1;
+      loadData();
+    };
+    document.getElementById('berita-btn-prev').onclick = () => { state.page--; loadData(); };
+    document.getElementById('berita-btn-next').onclick = () => { state.page++; loadData(); };
+    
+    container.querySelectorAll('.btn-edit').forEach(btn => {
+      btn.onclick = () => showForm(btn.dataset.id);
+    });
+    container.querySelectorAll('.btn-delete').forEach(btn => {
+      btn.onclick = () => deleteItem(btn.dataset.id, btn.dataset.title);
+    });
+  }
+
+  async function showForm(id = null) {
+    state.view = 'form';
+    state.currentId = id;
+    let data = { title: '', slug: '', excerpt: '', content: '', thumbnail: '', category: 'Kegiatan Kelurahan', tags: '', status: 'draft', author: window.CMS_SHELL.user.name };
+    
+    if (id) {
+      CMS_UI.showLoader('Memuat data...');
+      try {
+        data = await CMS_API.getRecord('Berita', id);
+      } catch(e) {
+        CMS_UI.toast('Gagal memuat berita', 'error');
+        window.CMS_FORM_DIRTY = false;
+        state.view = 'list';
+        render();
+        return;
+      } finally {
+        CMS_UI.hideLoader();
+      }
+    } else {
+      const draft = getLocalDraft();
+      if (draft && confirm('Anda memiliki draft yang belum disimpan. Lanjutkan draft tersebut?')) {
+        data = draft;
+      }
+    }
+    
+    const container = document.getElementById('berita-content');
+    container.innerHTML = `
+      <div class="flex justify-between items-center mb-6">
+        <button class="btn" id="berita-btn-back">← Kembali</button>
+        <div class="flex gap-4">
+          <button class="btn btn-primary" id="berita-btn-save">Simpan Data</button>
+        </div>
+      </div>
+      
+      <div style="display:grid; grid-template-columns:2fr 1fr; gap:24px;">
+        <div style="background:#fff; padding:24px; border-radius:12px; border:1px solid #e2e8f0;">
+          <div class="form-group">
+            <label class="form-label">Judul Berita</label>
+            <input type="text" id="form-title" class="form-control" value="${data.title}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Isi Berita</label>
+            <textarea id="form-content" class="form-control" style="min-height:300px">${data.content}</textarea>
+          </div>
+        </div>
+        
+        <div style="display:flex; flex-direction:column; gap:24px;">
+          <div style="background:#fff; padding:24px; border-radius:12px; border:1px solid #e2e8f0;">
+            <div class="form-group">
+              <label class="form-label">Status</label>
+              <select id="form-status" class="form-control">
+                <option value="draft" ${data.status==='draft'?'selected':''}>Draft</option>
+                <option value="publish" ${data.status==='publish'?'selected':''}>Publish</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Tanggal Publikasi</label>
+              <input type="datetime-local" id="form-published-at" class="form-control" value="${data.published_at ? data.published_at.substring(0, 16) : ''}">
+              <p style="font-size:12px; color:#64748b; margin-top:4px;">Biarkan kosong untuk menggunakan waktu saat ini ketika status diubah ke Publish.</p>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Kategori</label>
+              <select id="form-category" class="form-control">
+                <option value="Kegiatan Kelurahan" ${data.category==='Kegiatan Kelurahan'?'selected':''}>Kegiatan Kelurahan</option>
+                <option value="UMKM" ${data.category==='UMKM'?'selected':''}>UMKM</option>
+                <option value="Masyarakat" ${data.category==='Masyarakat'?'selected':''}>Masyarakat</option>
+                <option value="Lingkungan" ${data.category==='Lingkungan'?'selected':''}>Lingkungan</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Tags (Pisahkan dengan koma)</label>
+              <input type="text" id="form-tags" class="form-control" value="${data.tags || ''}">
+            </div>
+            <div class="form-group">
+              <div id="image-preview" class="image-preview mb-4 ${data.image ? '' : 'hidden'}">
+                <img src="${CMS_UI.getDriveImageUrl(data.image) || ''}" alt="Preview" style="max-width: 100%; border-radius: 4px;">
+                <div class="mt-2 text-sm text-surface-500 break-all">${data.image || ''}</div>
+              </div>
+              <label class="form-label">URL Cover / Upload Baru</label>
+              <input type="text" id="form-image" class="form-control mb-2" value="${data.image || ''}" placeholder="https://...">
+              <input type="file" id="form-upload" accept="image/jpeg, image/png, image/webp" class="form-control" style="font-size:12px;">
+              <input type="hidden" id="form-image_public_id" value="${data.imageMeta ? data.imageMeta.publicId : ''}">
+              <input type="hidden" id="form-image_provider" value="${data.imageMeta ? data.imageMeta.provider : ''}">
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    // Bind Form Events
+    const checkUnsaved = () => {
+       window.CMS_FORM_DIRTY = true;
+       if (!id) {
+         saveLocalDraft(getFormData());
+       }
+    };
+    document.getElementById('form-title').addEventListener('input', checkUnsaved);
+    document.getElementById('form-content').addEventListener('input', checkUnsaved);
+    document.getElementById('form-status').addEventListener('change', checkUnsaved);
+    document.getElementById('form-category').addEventListener('change', checkUnsaved);
+    document.getElementById('form-tags').addEventListener('input', checkUnsaved);
+    
+    document.getElementById('berita-btn-back').onclick = async () => {
+      if (window.CMS_FORM_DIRTY) {
+        const confirmExit = await CMS_UI.confirm('Batal Edit', 'Perubahan belum disimpan. Yakin ingin kembali?', 'Ya, Kembali', 'btn-danger');
+        if (!confirmExit) return;
+      }
+      window.CMS_FORM_DIRTY = false;
+      state.view = 'list';
+      render();
+    };
+    
+    document.getElementById('berita-btn-save').onclick = async () => {
+      await saveItem(id);
+    };
+    
+    document.getElementById('form-upload').onchange = async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      CMS_UI.showLoader('Mengupload gambar...');
+      try {
+        const res = await CMS_API.uploadMedia(file, 'Berita');
+        document.getElementById('form-image').value = res.fileUrl;
+        document.getElementById('form-image_public_id').value = res.publicId;
+        document.getElementById('form-image_provider').value = res.provider;
+        
+        const previewEl = document.getElementById('image-preview');
+        previewEl.innerHTML = `<img src="${res.fileUrl}" style="max-width:100%; border-radius:4px;"><div class="mt-2 text-sm text-surface-500 break-all">${res.fileUrl}</div>`;
+        previewEl.classList.remove('hidden');
+        
+        CMS_UI.toast('Gambar berhasil diupload');
+        checkUnsaved();
+      } catch(err) {
+        CMS_UI.toast(err.message, 'error');
+      } finally {
+        CMS_UI.hideLoader();
+      }
+    };
+  }
+
+  function getFormData() {
+    return {
+      title: document.getElementById('form-title').value,
+      content: document.getElementById('form-content').value,
+      status: document.getElementById('form-status').value,
+      published_at: document.getElementById('form-published-at').value ? new Date(document.getElementById('form-published-at').value).toISOString() : '',
+      category: document.getElementById('form-category').value,
+      tags: document.getElementById('form-tags').value,
+      image: document.getElementById('form-image').value,
+      image_public_id: document.getElementById('form-image_public_id').value,
+      image_provider: document.getElementById('form-image_provider').value,
+      author: window.CMS_SHELL.user.name
+    };
+  }
+
+  async function saveItem(id) {
+    const data = getFormData();
+    if (!data.title) { CMS_UI.toast('Judul wajib diisi', 'error'); return; }
+    
+    CMS_UI.showLoader('Menyimpan berita...');
+    try {
+      if (id) {
+        await CMS_API.updateRecord('Berita', id, data);
+        CMS_UI.toast('Berita berhasil diperbarui');
+      } else {
+        await CMS_API.createRecord('Berita', data);
+        CMS_UI.toast('Berita berhasil dibuat');
+        clearLocalDraft();
+      }
+      window.CMS_FORM_DIRTY = false;
+      state.view = 'list';
+      render();
+    } catch(e) {
+      CMS_UI.toast(e.message, 'error');
+    } finally {
+      CMS_UI.hideLoader();
+    }
+  }
+
+  async function deleteItem(id, title) {
+    const confirmed = await CMS_UI.confirm('Hapus Berita', `Berita "${title}" akan dipindahkan ke Data Terhapus. Lanjutkan?`, 'Ya, Hapus', 'btn-danger');
+    if (!confirmed) return;
+    
+    CMS_UI.showLoader('Menghapus berita...');
+    try {
+      await CMS_API.deleteRecord('Berita', id);
+      CMS_UI.toast('Berita berhasil dihapus');
+      loadData();
+    } catch(e) {
+      CMS_UI.toast(e.message, 'error');
+    } finally {
+      CMS_UI.hideLoader();
+    }
+  }
+
+  function render(container, action) {
+    if (container) {
+      container.innerHTML = `
+        <section>
+          <div class="page-heading">
+            <div>
+              <p class="eyebrow">CMS INTERNAL</p>
+              <h1>Kelola Berita</h1>
+              <p>Tambah, ubah, atau hapus artikel berita kelurahan.</p>
+            </div>
+          </div>
+          <div id="berita-content"></div>
+        </section>
+      `;
+    }
+    
+    if (action === 'create') {
+      showForm();
+    } else if (state.view === 'list') {
+      loadData();
+    } else {
+      showForm(state.currentId);
+    }
+  }
+
+  return { render };
+})();
+</script>

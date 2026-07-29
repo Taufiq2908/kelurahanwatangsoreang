@@ -1,0 +1,129 @@
+<script>
+window.PetaCategories.showCategoryForm = async function(id = null) {
+  window.PetaState.catView = 'form';
+  window.PetaState.catCurrentId = id;
+  let data = { name: '', icon: '', color: 'blue', display_order: '1', description: '' };
+  
+  if (id) {
+    CMS_UI.showLoader('Memuat data kategori...');
+    try {
+      data = await CMS_API.getRecord('PetaKategori', id);
+    } catch(e) {
+      CMS_UI.toast('Gagal memuat data kategori', 'error');
+      window.PetaState.catView = 'list';
+      if (window.Module_Peta) window.Module_Peta.render(document.querySelector('#app-content'));
+      return;
+    } finally {
+      CMS_UI.hideLoader();
+    }
+  }
+  
+  const container = document.getElementById('peta-content');
+  if (!container) return;
+
+  const colors = [
+    { value: 'blue', label: 'Biru (Blue)' },
+    { value: 'emerald', label: 'Hijau (Emerald)' },
+    { value: 'rose', label: 'Merah (Rose)' },
+    { value: 'amber', label: 'Kuning (Amber)' },
+    { value: 'purple', label: 'Ungu (Purple)' },
+    { value: 'indigo', label: 'Nila (Indigo)' },
+    { value: 'cyan', label: 'Sian (Cyan)' },
+    { value: 'surface', label: 'Abu-abu (Surface)' }
+  ];
+
+  let colorOptions = '';
+  colors.forEach(c => {
+    colorOptions += `<option value="${c.value}" ${data.color === c.value ? 'selected' : ''}>${c.label}</option>`;
+  });
+
+  container.innerHTML = `
+    <div class="flex justify-between items-center mb-6">
+      <button class="btn" id="cat-btn-back"><span class="material-icons-outlined text-[18px]">arrow_back</span> Kembali</button>
+      <button class="btn btn-primary" id="cat-btn-save">Simpan Kategori</button>
+    </div>
+    
+    <div class="card p-6 grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl">
+      <div class="form-group md:col-span-2">
+        <label class="form-label">Nama Kategori</label>
+        <input type="text" id="cat-form-name" class="form-control" value="${data.name || ''}" placeholder="Cth: Fasilitas Kesehatan">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Ikon (Material Icons)</label>
+        <input type="text" id="cat-form-icon" class="form-control" value="${data.icon || ''}" placeholder="Cth: local_hospital">
+        <p class="text-xs text-surface-500 mt-1">Gunakan nama ikon dari <a href="https://fonts.google.com/icons?selected=Material+Icons+Outlined" target="_blank" class="text-blue-600 hover:underline">Google Fonts</a>.</p>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Warna Label</label>
+        <select id="cat-form-color" class="form-control">
+          ${colorOptions}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Urutan Tampil (Display Order)</label>
+        <input type="number" id="cat-form-order" class="form-control" value="${data.display_order || '1'}" min="1">
+      </div>
+      <div class="form-group md:col-span-2">
+        <label class="form-label">Deskripsi Kategori</label>
+        <textarea id="cat-form-desc" class="form-control" rows="2" placeholder="Penjelasan singkat kategori">${data.description || ''}</textarea>
+      </div>
+    </div>
+  `;
+  
+  document.getElementById('cat-btn-back').onclick = async () => { 
+    if (window.CMS_FORM_DIRTY) {
+      const confirmExit = await CMS_UI.confirm('Batal Edit', 'Perubahan belum disimpan. Yakin ingin kembali?', 'Ya, Kembali', 'btn-danger');
+      if (!confirmExit) return;
+    }
+    window.CMS_FORM_DIRTY = false;
+    window.PetaState.catView = 'list'; 
+    if (window.Module_Peta) window.Module_Peta.render(document.querySelector('#app-content'));
+  };
+  document.getElementById('cat-btn-save').onclick = () => window.PetaCategories.saveCategoryItem(id);
+};
+
+window.PetaCategories.saveCategoryItem = async function(id) {
+  const data = {
+    name: document.getElementById('cat-form-name').value,
+    icon: document.getElementById('cat-form-icon').value,
+    color: document.getElementById('cat-form-color').value,
+    display_order: document.getElementById('cat-form-order').value,
+    description: document.getElementById('cat-form-desc').value
+  };
+  
+  if (!data.name) { CMS_UI.toast('Nama kategori wajib diisi', 'error'); return; }
+  
+  CMS_UI.showLoader('Menyimpan kategori...');
+  try {
+    if (id) {
+      await CMS_API.updateRecord('PetaKategori', id, data);
+      CMS_UI.toast('Kategori berhasil diperbarui');
+    } else {
+      await CMS_API.createRecord('PetaKategori', data);
+      CMS_UI.toast('Kategori berhasil dibuat');
+    }
+    window.PetaState.catView = 'list';
+    if (window.Module_Peta) window.Module_Peta.render(document.querySelector('#app-content'));
+  } catch(e) {
+    CMS_UI.toast(e.message, 'error');
+  } finally {
+    CMS_UI.hideLoader();
+  }
+};
+
+window.PetaCategories.deleteCategoryItem = async function(id, title) {
+  const confirmed = await CMS_UI.confirm('Hapus Kategori', 'Hapus kategori "' + title + '"? Tindakan ini tidak dapat dibatalkan.');
+  if (!confirmed) return;
+  
+  CMS_UI.showLoader('Menghapus...');
+  try {
+    await CMS_API.deleteRecord('PetaKategori', id);
+    CMS_UI.toast('Kategori berhasil dihapus');
+    if (window.PetaCategories) window.PetaCategories.loadCategories();
+  } catch(e) {
+    CMS_UI.toast(e.message, 'error');
+  } finally {
+    CMS_UI.hideLoader();
+  }
+};
+</script>

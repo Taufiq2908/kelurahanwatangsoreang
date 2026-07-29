@@ -1,0 +1,153 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 160 84% 39%;
+    --primary-foreground: 355.7 100% 97.3%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 160 84% 39%;
+    --radius: 0.75rem;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    @apply scroll-smooth;
+  }
+
+  body {
+    @apply bg-white text-surface-900 font-sans antialiased;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-primary-200 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-primary-400;
+  }
+}
+
+@layer components {
+  /* Layout Tokens */
+  .container-editorial {
+    @apply max-w-4xl mx-auto;
+  }
+  
+  .section-editorial {
+    @apply px-6 py-12 md:py-16;
+  }
+
+  /* Typography Tokens */
+  .text-editorial-h1 {
+    @apply text-4xl md:text-5xl lg:text-6xl font-extrabold text-surface-900 leading-[1.1] tracking-tighter;
+  }
+
+  .text-editorial-h2 {
+    @apply text-2xl md:text-3xl font-extrabold text-surface-900 tracking-tight;
+  }
+
+  .text-editorial-h3 {
+    @apply text-base md:text-lg font-bold text-surface-900 leading-snug;
+  }
+
+  .text-editorial-body {
+    @apply text-sm md:text-base text-surface-600 font-medium leading-relaxed;
+  }
+
+  .text-editorial-meta {
+    @apply text-[10px] font-bold uppercase tracking-wider text-surface-400;
+  }
+
+  /* Deprecated layout classes (kept temporarily for components not yet refactored) */
+  .section {
+    @apply px-4 py-8;
+  }
+
+  .section-title {
+    @apply text-lg font-bold text-surface-900 tracking-tight mb-1;
+  }
+
+  .section-subtitle {
+    @apply text-xs text-surface-500 font-medium;
+  }
+
+  /* Badge */
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold;
+  }
+
+  /* Icon button */
+  .icon-btn {
+    @apply flex items-center justify-center rounded-xl transition-all duration-200;
+    @apply hover:scale-105 active:scale-95;
+  }
+
+  /* Bottom safe area padding */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 1rem);
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-accent-500;
+  }
+
+  .bg-gradient-hero {
+    background: linear-gradient(135deg, #059669 0%, #0ea5e9 100%);
+  }
+
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* Hide scrollbar while keeping scroll functionality */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}

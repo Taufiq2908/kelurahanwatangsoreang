@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <base target="_top">
+    <meta charset="utf-8">
+    <script>
+      window.onerror = function(msg, url, line, col, error) {
+        if(url && url.indexOf('userCodeAppPanel') > -1 && line) {
+           var html = document.documentElement.outerHTML;
+           var lines = html.split('\n');
+           var failingLine = lines[line - 1] || "Line not found";
+           alert("CRITICAL ERROR: " + msg + "\nLine " + line + ":\n" + failingLine);
+        } else {
+           alert("CRITICAL ERROR: " + msg + " at line " + line + ":" + col);
+        }
+      };
+    </script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              surface: {
+                50: '#f8fafc',
+                100: '#f1f5f9',
+                200: '#e2e8f0',
+                300: '#cbd5e1',
+                400: '#94a3b8',
+                500: '#64748b',
+                600: '#475569',
+                700: '#334155',
+                800: '#1e293b',
+                900: '#0f172a',
+              }
+            },
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+            }
+          }
+        }
+      }
+    </script>
+    <script>
+      window.CMS_SHELL = {
+        title: <?!= JSON.stringify(appTitle) ?>,
+        user: <?!= JSON.stringify(user) ?>,
+        config: <?!= shellConfig ?>,
+      };
+    </script>
+    <?!= include('Styles'); ?>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Navigasi CMS">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">WS</span>
+          <span><strong>Kelurahan</strong><small>Watang Soreang</small></span>
+        </div>
+        <nav id="sidebar-nav" class="primary-nav" aria-label="Menu utama"></nav>
+        <a class="public-link" href="<?= JSON.parse(shellConfig).publicWebsiteUrl ?>" target="_blank" rel="noopener noreferrer">Lihat Website Publik</a>
+      </aside>
+
+      <div id="mobile-drawer-backdrop" class="drawer-backdrop" hidden></div>
+      <aside id="mobile-drawer" class="mobile-drawer" aria-label="Menu CMS" aria-hidden="true">
+        <div class="drawer-header"><span>Menu CMS</span><button id="drawer-close" class="icon-button" aria-label="Tutup menu">×</button></div>
+        <nav id="drawer-nav" class="primary-nav" aria-label="Menu utama"></nav>
+      </aside>
+
+      <div class="content-frame">
+        <header class="topbar">
+          <button id="menu-toggle" class="icon-button menu-toggle" aria-label="Buka menu" aria-expanded="false">☰</button>
+          <div class="topbar-title"><strong>Kelurahan Watang Soreang</strong><span>CMS Internal</span></div>
+          <div class="user-menu">
+            <div class="user-avatar" aria-hidden="true" id="user-initials"></div>
+            <div class="user-details"><strong>Administrator</strong><span>CMS Access</span></div>
+            <button id="logout-button" class="logout-button">Keluar</button>
+          </div>
+        </header>
+        <main id="main-content" class="main-content" tabindex="-1"></main>
+      </div>
+
+      <nav id="bottom-nav" class="bottom-nav" aria-label="Navigasi cepat"></nav>
+    </div>
+    <?!= include('CMS_Api'); ?>
+    <?!= include('CMS_UI'); ?>
+    <?!= include('Module_Dashboard'); ?>
+    <?!= include('Module_Berita'); ?>
+    <?!= include('Module_Pengumuman'); ?>
+    <?!= include('Module_Edukasi'); ?>
+    <?!= include('Module_Aspirasi'); ?>
+    <?!= include('Module_Layanan'); ?>
+    <?!= include('Module_FAQ'); ?>
+    <?!= include('Module_Peta_State'); ?>
+    <?!= include('Module_Peta'); ?>
+    <?!= include('Module_Peta_List'); ?>
+    <?!= include('Module_Peta_Categories'); ?>
+    <?!= include('Module_Peta_Categories_Form'); ?>
+    <?!= include('Module_Peta_Form'); ?>
+    <?!= include('Module_Sampah'); ?>
+
+    <?!= include('Module_Profil'); ?>
+    <?!= include('Module_Kontak'); ?>
+    <?!= include('Module_Aparatur'); ?>
+    <?!= include('Module_Login'); ?>
+    <?!= include('App'); ?>
+  </body>
+</html>
+

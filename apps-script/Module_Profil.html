@@ -1,0 +1,223 @@
+<script>
+window.Module_Profil = (function() {
+  
+  async function loadData(container) {
+    CMS_UI.showLoader('Memuat data profil...');
+    try {
+      const data = await window.CMS_API.getProfil();
+      renderForm(container, data);
+    } catch(e) {
+      CMS_UI.toast('Gagal memuat profil', 'error');
+    } finally {
+      CMS_UI.hideLoader();
+    }
+  }
+
+  function renderForm(container, data) {
+    const html = `
+      <div class="flex justify-between items-center mb-6">
+        <h2 style="font-size:18px; margin:0;">Profil Kelurahan</h2>
+        <button class="btn btn-primary" id="profil-btn-save">Simpan Perubahan</button>
+      </div>
+      
+      <div style="display:grid; grid-template-columns:1fr; gap:24px;" id="profil-form">
+        
+        <!-- SECTION 1: LEADER -->
+        <div style="background:#fff; padding:24px; border-radius:12px; border:1px solid #e2e8f0;">
+          <h3 style="margin:0 0 16px; font-size:16px; border-bottom:1px solid #e2e8f0; padding-bottom:8px;">Kepala Kelurahan</h3>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+            <div class="form-group">
+              <label class="form-label">Nama Lengkap</label>
+              <input type="text" class="form-control profil-input" data-key="leader_name" value="${data.leader_name || ''}">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Jabatan</label>
+              <input type="text" class="form-control profil-input" data-key="leader_position" value="${data.leader_position || ''}">
+            </div>
+            <div class="form-group" style="grid-column: 1 / -1;">
+              <label class="form-label">Kata Sambutan</label>
+              <textarea class="form-control profil-input" data-key="leader_sambutan" style="min-height:100px">${data.leader_sambutan || ''}</textarea>
+            </div>
+            <div class="form-group" style="grid-column: 1 / -1;">
+              <div id="leader-photo-preview" class="image-preview mb-4 ${data.leader_photo ? '' : 'hidden'}">
+                <img src="${CMS_UI.getDriveImageUrl(data.leader_photo) || data.leader_photo || ''}" style="max-width:200px; border-radius:8px;">
+              </div>
+              <label class="form-label">Foto Pimpinan</label>
+              <input type="text" id="leader-photo-url" class="form-control mb-2 profil-input" data-key="leader_photo" value="${data.leader_photo || ''}" readonly placeholder="URL foto akan terisi setelah upload">
+              <input type="file" id="leader-photo-upload" accept="image/png, image/jpeg, image/webp" class="form-control" style="font-size:12px;">
+              <input type="hidden" id="leader-photo-public-id" class="profil-input" data-key="leader_photo_public_id" value="${data.leader_photoMeta ? data.leader_photoMeta.publicId : ''}">
+              <input type="hidden" id="leader-photo-provider" class="profil-input" data-key="leader_photo_provider" value="${data.leader_photoMeta ? data.leader_photoMeta.provider : ''}">
+            </div>
+          </div>
+        </div>
+        
+        <!-- SECTION 2: VILLAGE PROFILE -->
+        <div style="background:#fff; padding:24px; border-radius:12px; border:1px solid #e2e8f0;">
+          <h3 style="margin:0 0 16px; font-size:16px; border-bottom:1px solid #e2e8f0; padding-bottom:8px;">Identitas Kelurahan</h3>
+          <div style="display:flex; flex-direction:column; gap:16px;">
+            <div class="form-group">
+              <label class="form-label">Visi</label>
+              <textarea class="form-control profil-input" data-key="profile_vision" style="min-height:80px">${data.profile_vision || ''}</textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Misi</label>
+              <textarea class="form-control profil-input" data-key="profile_mission" style="min-height:100px">${data.profile_mission || ''}</textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Sejarah</label>
+              <textarea class="form-control profil-input" data-key="profile_history" style="min-height:150px">${data.profile_history || ''}</textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 3: STATISTICS -->
+        <div style="background:#fff; padding:24px; border-radius:12px; border:1px solid #e2e8f0;">
+          <h3 style="margin:0 0 16px; font-size:16px; border-bottom:1px solid #e2e8f0; padding-bottom:8px;">Statistik Demografi</h3>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+            <div class="form-group">
+              <label class="form-label">Jumlah Penduduk</label>
+              <input type="number" class="form-control profil-input" data-key="stat_population" value="${data.stat_population || '0'}">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Jumlah Kepala Keluarga (KK)</label>
+              <input type="number" class="form-control profil-input" data-key="stat_households" value="${data.stat_households || '0'}">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Laki-laki</label>
+              <input type="number" class="form-control profil-input" data-key="stat_male" value="${data.stat_male || '0'}">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Perempuan</label>
+              <input type="number" class="form-control profil-input" data-key="stat_female" value="${data.stat_female || '0'}">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Jumlah RT</label>
+              <input type="number" class="form-control profil-input" data-key="stat_rt" value="${data.stat_rt || '0'}">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Jumlah RW</label>
+              <input type="number" class="form-control profil-input" data-key="stat_rw" value="${data.stat_rw || '0'}">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Luas Wilayah (Ha)</label>
+              <input type="text" class="form-control profil-input" data-key="stat_area" value="${data.stat_area || '0'}">
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 4: OPERATIONAL -->
+        <div style="background:#fff; padding:24px; border-radius:12px; border:1px solid #e2e8f0;">
+          <h3 style="margin:0 0 16px; font-size:16px; border-bottom:1px solid #e2e8f0; padding-bottom:8px;">Informasi Operasional</h3>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+            <div class="form-group">
+              <label class="form-label">Hari Pelayanan</label>
+              <input type="text" class="form-control profil-input" data-key="op_days" value="${data.op_days || 'Senin - Jumat'}">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Jam Operasional</label>
+              <input type="text" class="form-control profil-input" data-key="op_hours" value="${data.op_hours || '08:00 - 16:00'}">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Email Kantor</label>
+              <input type="email" class="form-control profil-input" data-key="op_email" value="${data.op_email || ''}">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Telepon Utama</label>
+              <input type="text" class="form-control profil-input" data-key="op_phone" value="${data.op_phone || ''}">
+            </div>
+            <div class="form-group">
+              <label class="form-label">WhatsApp</label>
+              <input type="text" class="form-control profil-input" data-key="op_whatsapp" value="${data.op_whatsapp || ''}" placeholder="Gunakan kode negara (misal: 6281234567890)">
+            </div>
+            <div class="form-group" style="grid-column: 1 / -1;">
+              <label class="form-label">Alamat Lengkap</label>
+              <textarea class="form-control profil-input" data-key="op_address" rows="2">${data.op_address || ''}</textarea>
+            </div>
+            <div class="form-group" style="grid-column: 1 / -1;">
+              <label class="form-label">Link Google Maps (Bukan Embed)</label>
+              <input type="text" class="form-control profil-input" data-key="op_maps" value="${data.op_maps || ''}">
+            </div>
+          </div>
+        </div>
+        
+        <!-- SECTION 5: SOCIAL MEDIA -->
+        <div style="background:#fff; padding:24px; border-radius:12px; border:1px solid #e2e8f0;">
+          <h3 style="margin:0 0 16px; font-size:16px; border-bottom:1px solid #e2e8f0; padding-bottom:8px;">Sosial Media</h3>
+          <div style="display:grid; grid-template-columns:1fr; gap:16px;">
+            <div class="form-group">
+              <label class="form-label">Link Facebook</label>
+              <input type="text" class="form-control profil-input" data-key="soc_facebook" value="${data.soc_facebook || ''}">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Link Instagram</label>
+              <input type="text" class="form-control profil-input" data-key="soc_instagram" value="${data.soc_instagram || ''}">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Link YouTube</label>
+              <input type="text" class="form-control profil-input" data-key="soc_youtube" value="${data.soc_youtube || ''}">
+            </div>
+          </div>
+        </div>
+
+      </div>
+    `;
+    
+    container.innerHTML = html;
+    
+    document.getElementById('leader-photo-upload').onchange = async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      CMS_UI.showLoader('Mengupload foto pimpinan...');
+      try {
+        const res = await CMS_API.uploadMedia(file, 'Profil');
+        document.getElementById('leader-photo-url').value = res.fileUrl;
+        document.getElementById('leader-photo-public-id').value = res.publicId;
+        document.getElementById('leader-photo-provider').value = res.provider;
+        document.getElementById('leader-photo-preview').classList.remove('hidden');
+        document.getElementById('leader-photo-preview').innerHTML = `<img src="${res.fileUrl}" style="max-width:200px; border-radius:8px;">`;
+        CMS_UI.toast('Foto berhasil diupload');
+      } catch(err) {
+        CMS_UI.toast(err.message, 'error');
+      } finally {
+        CMS_UI.hideLoader();
+      }
+    };
+
+    document.getElementById('profil-btn-save').onclick = async () => {
+      const inputs = document.querySelectorAll('.profil-input');
+      const payload = {};
+      inputs.forEach(inp => {
+        payload[inp.dataset.key] = inp.value;
+      });
+      
+      CMS_UI.showLoader('Menyimpan data profil...');
+      try {
+        await window.CMS_API.updateProfil(payload);
+        CMS_UI.toast('Profil berhasil disimpan');
+      } catch(e) {
+        CMS_UI.toast(e.message, 'error');
+      } finally {
+        CMS_UI.hideLoader();
+      }
+    };
+  }
+
+  function render(container) {
+    container.innerHTML = `
+      <section>
+        <div class="page-heading">
+          <div>
+            <p class="eyebrow">CMS INTERNAL</p>
+            <h1>Profil Kelurahan</h1>
+            <p>Kelola data profil, sambutan, visi misi, statistik, dan operasional.</p>
+          </div>
+        </div>
+        <div id="profil-content"></div>
+      </section>
+    `;
+    loadData(document.getElementById('profil-content'));
+  }
+
+  return { render };
+})();
+</script>

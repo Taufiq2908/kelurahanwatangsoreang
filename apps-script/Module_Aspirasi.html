@@ -1,0 +1,343 @@
+<script>
+window.Module_Aspirasi = (function() {
+  let state = {
+    view: 'list',
+    items: [],
+    total: 0,
+    page: 1,
+    limit: 10,
+    search: '',
+    status: '',
+    currentId: null
+  };
+
+  async function loadData() {
+    try {
+      CMS_UI.showLoader('Memuat laporan...');
+      const res = await CMS_API.getRecords('Laporan', { page: state.page, limit: state.limit, search: state.search, status: state.status, sortBy: 'created_at', sortOrder: 'desc' });
+      state.items = res.items || [];
+      state.total = res.total || 0;
+      renderList();
+    } catch(e) {
+      console.error(e);
+      CMS_UI.toast('Error loadData: ' + e.message, 'error');
+      const el = document.getElementById('aspirasi-content');
+      if (el) el.innerHTML = '<div style="color:red; padding:20px;">Error loadData: ' + e.message + '</div>';
+    } finally {
+      CMS_UI.hideLoader();
+    }
+  }
+
+  function renderList() {
+    const container = document.getElementById('aspirasi-content');
+    if (!container) {
+      CMS_UI.toast('Error: container #aspirasi-content tidak ditemukan!', 'error');
+      return;
+    }
+    
+    try {
+      let html = `
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+          <div class="flex flex-wrap gap-3 items-center w-full md:w-auto">
+            <input type="text" id="aspirasi-search" class="w-full md:w-64 px-4 py-2 border border-surface-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none" placeholder="Cari laporan..." value="${state.search}">
+            <select id="aspirasi-filter" class="w-full md:w-40 px-4 py-2 border border-surface-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none bg-white">
+              <option value="">Semua Status</option>
+              <option value="Masuk" ${state.status==='Masuk'?'selected':''}>Masuk</option>
+              <option value="Proses" ${state.status==='Proses'?'selected':''}>Proses</option>
+              <option value="Selesai" ${state.status==='Selesai'?'selected':''}>Selesai</option>
+              <option value="Ditolak" ${state.status==='Ditolak'?'selected':''}>Ditolak</option>
+            </select>
+            <button class="px-4 py-2 bg-surface-100 hover:bg-surface-200 text-surface-700 text-sm font-semibold rounded-xl border border-surface-200 transition-colors w-full md:w-auto" id="aspirasi-btn-search">Cari</button>
+          </div>
+          <button class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-xl shadow-sm transition-colors w-full md:w-auto flex justify-center items-center gap-2" id="aspirasi-btn-export">
+            <span class="material-icons-outlined text-sm">download</span> Export CSV
+          </button>
+        </div>
+        
+        <div class="bg-white border border-surface-200 rounded-2xl overflow-hidden shadow-sm mb-6">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-surface-50 border-b border-surface-200 text-xs uppercase tracking-wider text-surface-500 font-bold">
+                  <th class="p-4">Kode / Waktu</th>
+                  <th class="p-4 hidden md:table-cell">Kategori / Lokasi</th>
+                  <th class="p-4">Pelapor</th>
+                  <th class="p-4">Status</th>
+                  <th class="p-4 text-right">Aksi</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-surface-100">
+      `;
+      
+      if (state.items.length === 0) {
+        html += `<tr><td colspan="5" class="p-12 text-center text-surface-500">Belum ada laporan aspirasi yang masuk.</td></tr>`;
+      } else {
+        html += state.items.map(item => {
+          let badgeClass = 'bg-surface-100 text-surface-700';
+          if (item.status === 'Selesai') badgeClass = 'bg-emerald-100 text-emerald-700';
+          if (item.status === 'Diproses') badgeClass = 'bg-blue-100 text-blue-700';
+          if (item.status === 'Masuk') badgeClass = 'bg-amber-100 text-amber-700';
+          if (item.status === 'Ditolak') badgeClass = 'bg-rose-100 text-rose-700';
+          
+          return `
+          <tr class="hover:bg-surface-50/50 transition-colors group">
+            <td class="p-4">
+              <p class="font-bold text-surface-900 text-sm tracking-wider mb-1">${item.tracking_code}</p>
+              <p class="text-xs text-surface-500">${item.created_at ? new Date(item.created_at).toLocaleDateString('id-ID', {day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '-'}</p>
+            </td>
+            <td class="p-4 hidden md:table-cell">
+              <p class="text-sm font-semibold text-surface-700 mb-1">${item.category}</p>
+              <p class="text-xs text-surface-500 truncate max-w-[200px]">${item.location}</p>
+            </td>
+            <td class="p-4">
+              ${item.anonymous === 'TRUE' || item.anonymous === true 
+                ? '<span class="text-xs font-semibold px-2 py-1 bg-surface-100 text-surface-500 rounded-md">Anonim</span>'
+                : `<p class="text-sm font-semibold text-surface-700 mb-1">${item.reporter_name}</p><p class="text-xs text-surface-500">${item.reporter_phone}</p>`
+              }
+            </td>
+            <td class="p-4">
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${badgeClass}">
+                ${item.status}
+              </span>
+            </td>
+            <td class="p-4 text-right">
+              <button class="btn-edit px-3 py-1.5 bg-white border border-surface-200 text-surface-700 hover:bg-surface-50 rounded-lg text-xs font-semibold shadow-sm transition-colors" data-id="${item.id}">Tinjau</button>
+            </td>
+          </tr>
+        `}).join('');
+      }
+      
+      html += `
+              </tbody>
+            </table>
+          </div>
+          
+          <div class="p-4 border-t border-surface-100 bg-surface-50/50 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <p class="text-sm text-surface-500 font-medium">Halaman ${state.page} dari Total ${state.total} laporan</p>
+            <div class="flex gap-2">
+              <button class="px-4 py-2 bg-white border border-surface-200 rounded-lg text-sm font-semibold hover:bg-surface-50 disabled:opacity-50 disabled:cursor-not-allowed" id="aspirasi-btn-prev" ${state.page <= 1 ? 'disabled' : ''}>Prev</button>
+              <button class="px-4 py-2 bg-white border border-surface-200 rounded-lg text-sm font-semibold hover:bg-surface-50 disabled:opacity-50 disabled:cursor-not-allowed" id="aspirasi-btn-next" ${state.items.length < state.limit ? 'disabled' : ''}>Next</button>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      container.innerHTML = html;
+    } catch(e) {}
+    
+    document.getElementById('aspirasi-btn-search').onclick = () => {
+      state.search = document.getElementById('aspirasi-search').value;
+      state.status = document.getElementById('aspirasi-filter').value;
+      state.page = 1;
+      loadData();
+    };
+    document.getElementById('aspirasi-btn-prev').onclick = () => { state.page--; loadData(); };
+    document.getElementById('aspirasi-btn-next').onclick = () => { state.page++; loadData(); };
+    document.getElementById('aspirasi-btn-export').onclick = exportCSV;
+    
+    container.querySelectorAll('.btn-edit').forEach(btn => {
+      btn.onclick = () => showForm(btn.dataset.id);
+    });
+  }
+
+  async function showForm(id) {
+    state.view = 'form';
+    state.currentId = id;
+    
+    CMS_UI.showLoader('Memuat data tiket...');
+    let data;
+    try {
+      data = await CMS_API.getRecord('Laporan', id);
+    } catch(e) {
+      CMS_UI.toast('Gagal memuat aspirasi', 'error');
+      state.view = 'list';
+      render();
+      return;
+    } finally {
+      CMS_UI.hideLoader();
+    }
+    
+    const isAnon = data.anonymous === 'TRUE';
+    let timelineHtml = '';
+    try {
+      const timeline = data.timeline ? JSON.parse(data.timeline) : [];
+      timelineHtml = timeline.map(t => `
+        <div style="margin-bottom:12px; padding-bottom:12px; border-bottom:1px solid #e2e8f0;">
+          <div style="font-size:11px; color:#64748b; font-weight:700;">${new Date(t.time).toLocaleString('id-ID')}</div>
+          <div><strong>Status: ${t.status}</strong></div>
+          <div style="color:#475569; font-size:13px; margin-top:4px;">${t.note || '-'}</div>
+        </div>
+      `).join('');
+    } catch(e) {}
+    
+    const container = document.getElementById('aspirasi-content');
+    container.innerHTML = `
+      <div class="flex justify-between items-center mb-6">
+        <button class="btn" id="aspirasi-btn-back">← Kembali</button>
+        <button class="btn btn-primary" id="aspirasi-btn-save">Simpan Update</button>
+      </div>
+      
+      <div style="display:grid; grid-template-columns:2fr 1fr; gap:24px;">
+        <div style="display:flex; flex-direction:column; gap:24px;">
+          <div style="background:#fff; padding:24px; border-radius:12px; border:1px solid #e2e8f0;">
+            <div class="page-heading" style="margin-bottom:16px;">
+              <div>
+                <p class="eyebrow">DETAIL TIKET: ${data.tracking_code}</p>
+                <h2 style="font-size:18px; margin:0 0 16px;">${data.category} - Lokasi: ${data.location}</h2>
+              </div>
+            </div>
+            
+            <div style="background:#f8fafc; padding:16px; border-radius:8px; margin-bottom:16px;">
+              <strong>Deskripsi Laporan:</strong><br/>
+              <p style="margin:8px 0 0; color:#334155; line-height:1.6;">${data.description}</p>
+            </div>
+            
+            ${data.image ? `<div style="margin-bottom:16px;"><strong>Lampiran Gambar:</strong><br/><img src="${CMS_UI.getDriveImageUrl(data.image)}" style="max-width:100%; max-height:300px; margin-top:8px; border-radius:8px; border:1px solid #e2e8f0;" alt="Lampiran Laporan"></div>` : ''}
+            
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; padding-top:16px; border-top:1px solid #e2e8f0;">
+              <div>
+                <strong>Pelapor:</strong><br/>
+                <span style="color:#475569">${isAnon ? 'Anonim' : (data.reporter_name || '-')}</span>
+              </div>
+              <div>
+                <strong>Kontak:</strong><br/>
+                <span style="color:#475569">${isAnon ? 'Dirahasiakan' : (data.reporter_phone || '-')}</span>
+              </div>
+            </div>
+          </div>
+          
+          <div style="background:#fff; padding:24px; border-radius:12px; border:1px solid #e2e8f0;">
+            <h3 style="margin:0 0 16px; font-size:16px;">Tindak Lanjut & Tanggapan Admin</h3>
+            <div class="form-group">
+              <label class="form-label">Ubah Status</label>
+              <select id="form-status" class="form-control">
+                <option value="Masuk" ${data.status==='Masuk'?'selected':''}>Baru (Masuk)</option>
+                <option value="Diproses" ${data.status==='Diproses'?'selected':''}>Diproses (Sedang ditindaklanjuti)</option>
+                <option value="Selesai" ${data.status==='Selesai'?'selected':''}>Selesai (Kasus ditutup)</option>
+                <option value="Ditolak" ${data.status==='Ditolak'?'selected':''}>Ditolak (Laporan invalid)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Catatan Admin (Untuk publik/pelapor)</label>
+              <textarea id="form-response" class="form-control" style="min-height:100px">${data.response || ''}</textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Catatan Internal (Hanya terlihat di Timeline)</label>
+              <input type="text" id="form-internal-note" class="form-control" placeholder="Cth: Diteruskan ke DLH Parepare...">
+            </div>
+          </div>
+        </div>
+        
+        <div>
+          <div style="background:#fff; padding:24px; border-radius:12px; border:1px solid #e2e8f0;">
+            <h3 style="margin:0 0 16px; font-size:16px;">Timeline Status</h3>
+            ${timelineHtml}
+          </div>
+        </div>
+      </div>
+    `;
+    
+    document.getElementById('aspirasi-btn-back').onclick = async () => {
+      if (window.CMS_FORM_DIRTY) {
+        const confirmExit = await CMS_UI.confirm('Batal Edit', 'Perubahan belum disimpan. Yakin ingin kembali?', 'Ya, Kembali', 'btn-danger');
+        if (!confirmExit) return;
+      }
+      window.CMS_FORM_DIRTY = false;
+      state.view = 'list';
+      render();
+    };
+    
+    document.getElementById('aspirasi-btn-save').onclick = async () => {
+      const newStatus = document.getElementById('form-status').value;
+      const responseText = document.getElementById('form-response').value;
+      const internalNote = document.getElementById('form-internal-note').value;
+      
+      const payload = {
+        status: newStatus,
+        response: responseText
+      };
+      
+      if (newStatus !== data.status || internalNote) {
+        let timeline = [];
+        try { timeline = data.timeline ? JSON.parse(data.timeline) : []; } catch(e) {}
+        timeline.push({
+          status: newStatus,
+          time: new Date().toISOString(),
+          note: internalNote || 'Status diubah ke ' + newStatus
+        });
+        payload.timeline = JSON.stringify(timeline);
+      }
+      
+      CMS_UI.showLoader('Menyimpan update...');
+      try {
+        await CMS_API.updateRecord('Laporan', id, payload);
+        CMS_UI.toast('Tindak lanjut berhasil disimpan');
+        window.CMS_FORM_DIRTY = false;
+        state.view = 'list';
+        render();
+      } catch(e) {
+        CMS_UI.toast(e.message, 'error');
+      } finally {
+        CMS_UI.hideLoader();
+      }
+    };
+  }
+
+  function exportCSV() {
+    if (state.items.length === 0) return CMS_UI.toast('Tidak ada data untuk diexport', 'error');
+    
+    const headers = ['Nomor Tiket', 'Tanggal Masuk', 'Status', 'Kategori', 'Lokasi', 'Pelapor', 'Kontak', 'Anonim', 'Deskripsi'];
+    const rows = state.items.map(r => [
+      r.tracking_code,
+      new Date(r.created_at).toISOString(),
+      r.status,
+      r.category,
+      r.location,
+      r.reporter_name,
+      r.reporter_phone,
+      r.anonymous,
+      String(r.description).replace(/\n/g, ' ')
+    ]);
+    
+    let csvContent = "data:text/csv;charset=utf-8,";
+    csvContent += headers.join(",") + "\r\n";
+    rows.forEach(row => {
+      let r = row.map(cell => '"' + (cell ? String(cell).replace(/"/g, '""') : '') + '"');
+      csvContent += r.join(",") + "\r\n";
+    });
+    
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "Laporan_Aspirasi_" + new Date().getTime() + ".csv");
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  }
+
+  function render(container) {
+    if (container) {
+      container.innerHTML = `
+        <section>
+          <div class="page-heading">
+            <div>
+              <p class="eyebrow">CMS INTERNAL</p>
+              <h1>Laporan & Aspirasi</h1>
+              <p>Tinjau dan tindaklanjuti laporan masyarakat.</p>
+            </div>
+          </div>
+          <div id="aspirasi-content"></div>
+        </section>
+      `;
+    }
+    
+    if (state.view === 'list') {
+      loadData();
+    } else {
+      showForm(state.currentId);
+    }
+  }
+
+  return { render };
+})();
+</script>

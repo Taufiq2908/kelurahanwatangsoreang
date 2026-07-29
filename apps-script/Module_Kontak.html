@@ -1,0 +1,321 @@
+<script>
+window.Module_Kontak = (function() {
+  let state = {
+    view: 'list',
+    items: [],
+    total: 0,
+    page: 1,
+    limit: 10,
+    search: '',
+    category: '',
+    currentId: null
+  };
+
+  async function loadData() {
+    try {
+      CMS_UI.showLoader('Memuat data kontak...');
+      const res = await CMS_API.getKontak({ page: state.page, limit: state.limit, search: state.search, sortBy: 'sort_order', sortOrder: 'asc' });
+      state.items = res.items || [];
+      if (state.category) {
+        state.items = state.items.filter(i => i.category === state.category);
+      }
+      state.total = state.items.length || 0; // Simple client-side filtering for category for now
+      renderList();
+    } catch(e) {
+      CMS_UI.toast('Error loadData: ' + e.message, 'error');
+    } finally {
+      CMS_UI.hideLoader();
+    }
+  }
+
+  function renderList() {
+    const container = document.getElementById('kontak-content');
+    if (!container) return;
+    
+    let html = `
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+        <div class="flex flex-wrap gap-3 items-center w-full md:w-auto">
+          <input type="text" id="kontak-search" class="w-full md:w-48 px-4 py-2 border border-surface-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="Cari nama..." value="${state.search}">
+          <select id="kontak-category" class="w-full md:w-40 px-4 py-2 border border-surface-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none bg-white">
+            <option value="">Semua Kategori</option>
+            <option value="office" ${state.category==='office'?'selected':''}>Kantor Kelurahan</option>
+            <option value="emergency" ${state.category==='emergency'?'selected':''}>Darurat</option>
+            <option value="rt" ${state.category==='rt'?'selected':''}>Ketua RT</option>
+            <option value="rw" ${state.category==='rw'?'selected':''}>Ketua RW</option>
+            <option value="government" ${state.category==='government'?'selected':''}>Instansi Pemerintah</option>
+            <option value="service" ${state.category==='service'?'selected':''}>Layanan Publik</option>
+          </select>
+          <button class="px-4 py-2 bg-surface-100 hover:bg-surface-200 text-surface-700 text-sm font-semibold rounded-xl border border-surface-200" id="kontak-btn-search">Filter</button>
+        </div>
+        <button class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-xl shadow-sm flex items-center gap-2" id="kontak-btn-create">
+          <span class="material-icons-outlined text-sm">add</span> Tambah Kontak
+        </button>
+      </div>
+      
+      <div class="bg-white border border-surface-200 rounded-2xl overflow-hidden shadow-sm mb-6">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-surface-50 border-b border-surface-200 text-xs uppercase tracking-wider text-surface-500 font-bold">
+                <th class="p-4 w-16">Ikon/Foto</th>
+                <th class="p-4">Nama</th>
+                <th class="p-4">Kategori</th>
+                <th class="p-4">Telepon / WA</th>
+                <th class="p-4 text-right">Aksi</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-surface-100">
+    `;
+    
+    if (state.items.length === 0) {
+      html += `<tr><td colspan="5" class="p-12 text-center text-surface-500">Belum ada kontak yang ditambahkan.</td></tr>`;
+    } else {
+      html += state.items.map(item => `
+        <tr class="hover:bg-surface-50/50 group">
+          <td class="p-4">
+            <div class="w-10 h-10 rounded-full bg-surface-200 overflow-hidden flex items-center justify-center">
+              ${item.photo ? `<img src="${CMS_UI.getDriveImageUrl(item.photo) || item.photo}" class="w-full h-full object-cover">` : `<span class="material-icons-outlined text-surface-400">contact_phone</span>`}
+            </div>
+          </td>
+          <td class="p-4">
+            <p class="font-bold text-surface-900">${item.name}</p>
+            ${item.position ? `<p class="text-xs text-surface-500">${item.position}</p>` : ''}
+          </td>
+          <td class="p-4 text-sm text-surface-600 uppercase text-xs tracking-wider">${item.category}</td>
+          <td class="p-4">
+            <p class="text-sm font-medium text-surface-700">${item.phone || item.whatsapp || '-'}</p>
+          </td>
+          <td class="p-4 text-right">
+            <div class="flex justify-end gap-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
+              <button class="btn-edit p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" data-id="${item.id}"><span class="material-icons-outlined text-[18px]">edit</span></button>
+              <button class="btn-delete p-2 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors" data-id="${item.id}" data-title="${CMS_UI.escapeHtml(item.name)}"><span class="material-icons-outlined text-[18px]">delete</span></button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+    
+    html += `
+            </tbody>
+          </table>
+        </div>
+        <div class="p-4 border-t border-surface-100 bg-surface-50/50 flex flex-col sm:flex-row justify-between items-center gap-4">
+          <p class="text-sm text-surface-500 font-medium">Halaman ${state.page}</p>
+          <div class="flex gap-2">
+            <button class="px-4 py-2 bg-white border border-surface-200 rounded-lg text-sm" id="kontak-btn-prev" ${state.page <= 1 ? 'disabled' : ''}>Prev</button>
+            <button class="px-4 py-2 bg-white border border-surface-200 rounded-lg text-sm" id="kontak-btn-next" ${state.items.length < state.limit ? 'disabled' : ''}>Next</button>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    container.innerHTML = html;
+    
+    document.getElementById('kontak-btn-create').onclick = () => showForm();
+    document.getElementById('kontak-btn-search').onclick = () => {
+      state.search = document.getElementById('kontak-search').value;
+      state.category = document.getElementById('kontak-category').value;
+      state.page = 1;
+      loadData();
+    };
+    document.getElementById('kontak-btn-prev').onclick = () => { state.page--; loadData(); };
+    document.getElementById('kontak-btn-next').onclick = () => { state.page++; loadData(); };
+    container.querySelectorAll('.btn-edit').forEach(btn => btn.onclick = () => showForm(btn.dataset.id));
+    container.querySelectorAll('.btn-delete').forEach(btn => btn.onclick = () => deleteItem(btn.dataset.id, btn.dataset.title));
+  }
+
+  async function showForm(id = null) {
+    state.view = 'form';
+    state.currentId = id;
+    let data = { name: '', category: 'office', position: '', phone: '', whatsapp: '', email: '', address: '', maps: '', photo: '', sort_order: '1', is_active: 'TRUE' };
+    
+    if (id) {
+      CMS_UI.showLoader('Memuat data...');
+      try {
+        data = await CMS_API.getRecord('Kontak', id);
+      } catch(e) {
+        CMS_UI.toast('Gagal memuat data', 'error');
+        window.CMS_FORM_DIRTY = false;
+        state.view = 'list';
+        render();
+        return;
+      } finally {
+        CMS_UI.hideLoader();
+      }
+    }
+    
+    const container = document.getElementById('kontak-content');
+    container.innerHTML = `
+      <div class="flex justify-between items-center mb-6">
+        <button class="btn" id="kontak-btn-back">← Kembali</button>
+        <button class="btn btn-primary" id="kontak-btn-save">Simpan Data</button>
+      </div>
+      
+      <div style="background:#fff; padding:24px; border-radius:12px; border:1px solid #e2e8f0; max-width:800px; margin:0 auto; display:grid; grid-template-columns:1fr 1fr; gap:24px;">
+        <div class="form-group" style="grid-column: 1 / -1;">
+          <label class="form-label">Kategori</label>
+          <select id="form-category" class="form-control">
+            <option value="office" ${data.category==='office'?'selected':''}>Kantor Kelurahan</option>
+            <option value="emergency" ${data.category==='emergency'?'selected':''}>Darurat</option>
+            <option value="rt" ${data.category==='rt'?'selected':''}>Ketua RT</option>
+            <option value="rw" ${data.category==='rw'?'selected':''}>Ketua RW</option>
+            <option value="government" ${data.category==='government'?'selected':''}>Instansi Pemerintah</option>
+            <option value="service" ${data.category==='service'?'selected':''}>Layanan Publik</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nama / Instansi</label>
+          <input type="text" id="form-name" class="form-control" value="${data.name || ''}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Posisi / Jabatan</label>
+          <input type="text" id="form-position" class="form-control" value="${data.position || ''}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">No. Telepon</label>
+          <input type="text" id="form-phone" class="form-control" value="${data.phone || ''}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">No. WhatsApp</label>
+          <input type="text" id="form-whatsapp" class="form-control" value="${data.whatsapp || ''}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" id="form-email" class="form-control" value="${data.email || ''}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Urutan</label>
+          <input type="number" id="form-sort" class="form-control" value="${data.sort_order || '1'}">
+        </div>
+        <div class="form-group" style="grid-column: 1 / -1;">
+          <label class="form-label">Alamat</label>
+          <textarea id="form-address" class="form-control" rows="2">${data.address || ''}</textarea>
+        </div>
+        <div class="form-group" style="grid-column: 1 / -1;">
+          <label class="form-label">Google Maps URL</label>
+          <input type="text" id="form-maps" class="form-control" value="${data.maps || ''}">
+        </div>
+        <div class="form-group" style="grid-column: 1 / -1;">
+          <div id="image-preview" class="image-preview mb-4 ${data.photo ? '' : 'hidden'}">
+            <img src="${CMS_UI.getDriveImageUrl(data.photo) || data.photo || ''}" style="max-width:200px; border-radius:8px;">
+          </div>
+          <label class="form-label">Foto / Ikon (Upload)</label>
+          <input type="text" id="form-photo" class="form-control mb-2" value="${data.photo || ''}" readonly placeholder="URL akan muncul setelah upload">
+          <input type="file" id="form-upload" accept="image/png, image/jpeg, image/webp" class="form-control" style="font-size:12px;">
+          <input type="hidden" id="form-photo_public_id" value="${data.photoMeta ? data.photoMeta.publicId : ''}">
+          <input type="hidden" id="form-photo_provider" value="${data.photoMeta ? data.photoMeta.provider : ''}">
+        </div>
+      </div>
+    `;
+    
+    document.getElementById('kontak-btn-back').onclick = async () => {
+      if (window.CMS_FORM_DIRTY) {
+        const confirmExit = await CMS_UI.confirm('Batal Edit', 'Perubahan belum disimpan. Yakin ingin kembali?', 'Ya, Kembali', 'btn-danger');
+        if (!confirmExit) return;
+      }
+      window.CMS_FORM_DIRTY = false;
+      state.view = 'list';
+      render();
+    };
+    document.getElementById('kontak-btn-save').onclick = () => saveItem(id);
+    document.getElementById('form-upload').onchange = async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      CMS_UI.showLoader('Mengupload foto...');
+      try {
+        const res = await CMS_API.uploadMedia(file, 'Kontak');
+        document.getElementById('form-photo').value = res.fileUrl;
+        document.getElementById('form-photo_public_id').value = res.publicId;
+        document.getElementById('form-photo_provider').value = res.provider;
+        
+        const previewEl = document.getElementById('image-preview');
+        previewEl.innerHTML = `<img src="${res.fileUrl}" style="max-width:200px; border-radius:8px;">`;
+        previewEl.classList.remove('hidden');
+        
+        CMS_UI.toast('Foto berhasil diupload');
+      } catch(err) {
+        CMS_UI.toast(err.message, 'error');
+      } finally {
+        CMS_UI.hideLoader();
+      }
+    };
+  }
+
+  async function saveItem(id) {
+    const data = {
+      category: document.getElementById('form-category').value,
+      name: document.getElementById('form-name').value,
+      position: document.getElementById('form-position').value,
+      phone: document.getElementById('form-phone').value,
+      whatsapp: document.getElementById('form-whatsapp').value,
+      email: document.getElementById('form-email').value,
+      address: document.getElementById('form-address').value,
+      maps: document.getElementById('form-maps').value,
+      photo: document.getElementById('form-photo').value,
+      photo_public_id: document.getElementById('form-photo_public_id').value,
+      photo_provider: document.getElementById('form-photo_provider').value,
+      sort_order: document.getElementById('form-sort').value,
+      is_active: 'TRUE'
+    };
+    
+    if (!data.name) { CMS_UI.toast('Nama wajib diisi', 'error'); return; }
+    
+    CMS_UI.showLoader('Menyimpan data...');
+    try {
+      if (id) {
+        await CMS_API.updateKontak(id, data);
+        CMS_UI.toast('Data berhasil diperbarui');
+      } else {
+        await CMS_API.createKontak(data);
+        CMS_UI.toast('Data berhasil dibuat');
+      }
+      state.view = 'list';
+      render();
+    } catch(e) {
+      CMS_UI.toast(e.message, 'error');
+    } finally {
+      CMS_UI.hideLoader();
+    }
+  }
+
+  async function deleteItem(id, title) {
+    const confirmed = await CMS_UI.confirm('Hapus Kontak', 'Hapus kontak "' + title + '"? Data akan dipindahkan ke sampah.');
+    if (!confirmed) return;
+    
+    CMS_UI.showLoader('Menghapus...');
+    try {
+      await CMS_API.deleteKontak(id);
+      CMS_UI.toast('Data berhasil dihapus');
+      loadData();
+    } catch(e) {
+      CMS_UI.toast(e.message, 'error');
+    } finally {
+      CMS_UI.hideLoader();
+    }
+  }
+
+  function render(container) {
+    if (container) {
+      container.innerHTML = `
+        <section>
+          <div class="page-heading">
+            <div>
+              <p class="eyebrow">CMS INTERNAL</p>
+              <h1>Direktori Kontak</h1>
+              <p>Kelola daftar kontak penting, RT/RW, dan layanan darurat.</p>
+            </div>
+          </div>
+          <div id="kontak-content"></div>
+        </section>
+      `;
+    }
+    if (state.view === 'list') {
+      loadData();
+    } else {
+      showForm(state.currentId);
+    }
+  }
+
+  return { render };
+})();
+</script>

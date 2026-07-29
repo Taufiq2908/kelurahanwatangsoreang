@@ -1,0 +1,235 @@
+<script>
+  (function () {
+    const shell = window.CMS_SHELL;
+    const pageCopy = {
+      'dashboard': { title: 'Dashboard & Statistik', icon: 'home' },
+      'berita': { title: 'Manajemen Berita', icon: 'article' },
+      'pengumuman': { title: 'Manajemen Pengumuman', icon: 'campaign' },
+      'edukasi': { title: 'Edukasi Iklim', icon: 'eco' },
+      'laporan': { title: 'Laporan Aspirasi', icon: 'inbox' },
+      'layanan': { title: 'Direktori Layanan', icon: 'assignment' },
+      'faq': { title: 'Tanya Jawab (FAQ)', icon: 'help_outline' },
+      'peta': { title: 'Peta Interaktif', icon: 'map' },
+      'sampah': { title: 'Bank Sampah', icon: 'delete_sweep' },
+      'profil': { title: 'Profil Kelurahan', icon: 'person' },
+      'kontak': { title: 'Direktori Kontak', icon: 'phone' },
+      'aparatur': { title: 'Struktur Aparatur', icon: 'groups' }
+    };
+    let activePage = 'dashboard';
+    let activeAction = null;
+
+    function renderNavigation(container, items) {
+      let html = '';
+      const grouped = {};
+      items.forEach(function(item) {
+        const group = item.group || 'OTHER';
+        if (!grouped[group]) grouped[group] = [];
+        grouped[group].push(item);
+      });
+      
+      const order = ['DASHBOARD', 'PRIMARY ACTIVITIES', 'CONTENT', 'PUBLIC SERVICES', 'COMMUNITY', 'GOVERNMENT', 'SYSTEM', 'OTHER'];
+      order.forEach(function(groupName) {
+        if (grouped[groupName] && grouped[groupName].length > 0) {
+          if (groupName !== 'DASHBOARD' && groupName !== 'OTHER') {
+            html += '<div style="margin-top:12px; margin-bottom:4px; padding-left:16px; font-size:10px; font-weight:700; color:#94a3b8; letter-spacing:0.05em;">' + groupName + '</div>';
+          }
+          grouped[groupName].forEach(function(item) {
+            html += '<button class="nav-button ' + (item.id === activePage ? 'is-active' : '') + '" data-page="' + item.id + '"><span class="material-icons-outlined text-[20px]" aria-hidden="true">' + item.icon + '</span><span class="ml-3">' + CMS_UI.escapeHtml(item.label) + '</span></button>';
+          });
+        }
+      });
+      
+      container.innerHTML = html;
+      container.querySelectorAll('[data-page]').forEach(function (button) {
+        button.addEventListener('click', function () { navigate(button.dataset.page); });
+      });
+    }
+
+    function renderBottomNavigation() {
+      const ids = ['dashboard', 'berita', 'pengumuman', 'laporan'];
+      let items = [];
+      ids.forEach(id => {
+        const found = shell.config.navigation.find(i => i.id === id);
+        if (found) items.push(found);
+      });
+      
+      const markup = items.map(function (item) {
+        return '<button class="nav-button ' + (item.id === activePage ? 'is-active' : '') + '" data-page="' + item.id + '"><span class="material-icons-outlined text-[24px]" aria-hidden="true">' + item.icon + '</span><span class="text-[10px] mt-1">' + CMS_UI.escapeHtml(item.label) + '</span></button>';
+      }).join('') + '<button class="nav-button" data-open-menu="true"><span class="material-icons-outlined text-[24px]" aria-hidden="true">menu</span><span class="text-[10px] mt-1">Menu</span></button>';
+      const container = document.getElementById('bottom-nav');
+      container.innerHTML = markup;
+      container.querySelectorAll('[data-page]').forEach(function (button) {
+        button.addEventListener('click', function () { navigate(button.dataset.page); });
+      });
+      container.querySelector('[data-open-menu]').addEventListener('click', openDrawer);
+    }
+
+    function renderPage() {
+      const main = document.getElementById('main-content');
+      main.innerHTML = '';
+      
+      try {
+        switch(activePage) {
+          case 'dashboard':
+            if (window.Module_Dashboard) window.Module_Dashboard.render(main, activeAction);
+            else main.innerHTML = placeholderHtml(activePage);
+            break;
+          case 'berita':
+            if (window.Module_Berita) window.Module_Berita.render(main, activeAction);
+            else main.innerHTML = placeholderHtml(activePage);
+            break;
+          case 'pengumuman':
+            if (window.Module_Pengumuman) window.Module_Pengumuman.render(main, activeAction);
+            else main.innerHTML = placeholderHtml(activePage);
+            break;
+          case 'edukasi':
+            if (window.Module_Edukasi) window.Module_Edukasi.render(main);
+            else main.innerHTML = placeholderHtml(activePage);
+            break;
+          case 'laporan':
+            if (window.Module_Aspirasi) window.Module_Aspirasi.render(main);
+            else main.innerHTML = placeholderHtml(activePage);
+            break;
+          case 'layanan':
+            if (window.Module_Layanan) window.Module_Layanan.render(main);
+            else main.innerHTML = placeholderHtml(activePage);
+            break;
+          case 'faq':
+            if (window.Module_FAQ) window.Module_FAQ.render(main);
+            else main.innerHTML = placeholderHtml(activePage);
+            break;
+          case 'peta':
+            if (window.Module_Peta) window.Module_Peta.render(main);
+            else main.innerHTML = placeholderHtml(activePage);
+            break;
+          case 'sampah':
+            if (window.Module_Sampah) window.Module_Sampah.render(main);
+            else main.innerHTML = placeholderHtml(activePage);
+            break;
+          case 'profil':
+            if (window.Module_Profil) window.Module_Profil.render(main);
+            else main.innerHTML = placeholderHtml(activePage);
+            break;
+          case 'kontak':
+            if (window.Module_Kontak) window.Module_Kontak.render(main);
+            else main.innerHTML = placeholderHtml(activePage);
+            break;
+          case 'aparatur':
+            if (window.Module_Aparatur) window.Module_Aparatur.render(main);
+            else main.innerHTML = placeholderHtml(activePage);
+            break;
+          default:
+            main.innerHTML = placeholderHtml(activePage);
+            break;
+        }
+      } catch(e) {
+        main.innerHTML = '<div style="padding:20px; color:red"><h2>Error in rendering ' + activePage + '</h2><p>' + e.message + '</p><pre>' + e.stack + '</pre></div>';
+      }
+      
+      // Since quick actions are internal to Dashboard now, we don't bind here
+      // But we expose window.navigate for them
+      main.focus();
+    }
+
+    function placeholderHtml(page) {
+      const copy = pageCopy[page] || { title: 'Modul', icon: '⚙' };
+      return '<section><div class="page-heading"><div><p class="eyebrow">CMS INTERNAL</p><h1>' + copy.title + '</h1><p>Kelola data ' + copy.title.toLowerCase() + '.</p></div></div><article class="placeholder-card"><div class="placeholder-icon mb-4" aria-hidden="true"><span class="material-icons-outlined text-4xl text-gray-400">' + copy.icon + '</span></div><h2>Modul sedang disiapkan</h2><p>Halaman ini saat ini hanya menyediakan navigasi. Fitur pengelolaan data akan ditambahkan pada sprint berikutnya.</p></article></section>';
+    }
+
+    window.CMS_FORM_DIRTY = false;
+
+    window.navigate = async function(page, action = null) {
+      console.log("ENTER navigate, page =", page, "action =", action);
+      
+      if (window.CMS_FORM_DIRTY) {
+        const confirmed = await CMS_UI.confirm('Perubahan Belum Disimpan', 'Anda memiliki perubahan yang belum disimpan. Apakah Anda yakin ingin meninggalkan halaman ini?', 'Ya, Tinggalkan', 'btn-danger');
+        if (!confirmed) return;
+        window.CMS_FORM_DIRTY = false;
+      }
+      
+      activePage = page;
+      activeAction = action;
+      renderNavigation(document.getElementById('sidebar-nav'), shell.config.navigation);
+      renderNavigation(document.getElementById('drawer-nav'), shell.config.navigation);
+      renderBottomNavigation();
+      renderPage();
+      closeDrawer();
+      console.log("EXIT navigate");
+    };
+
+    window.addEventListener('beforeunload', function (e) {
+      if (window.CMS_FORM_DIRTY) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    });
+
+    document.addEventListener('input', function(e) {
+      if (e.target.matches('.form-control') || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') {
+        window.CMS_FORM_DIRTY = true;
+      }
+    });
+    
+    document.addEventListener('change', function(e) {
+      if (e.target.matches('.form-control') || e.target.tagName === 'SELECT') {
+        window.CMS_FORM_DIRTY = true;
+      }
+    });
+
+    function openDrawer() {
+      document.getElementById('mobile-drawer').classList.add('is-open');
+      document.getElementById('mobile-drawer').setAttribute('aria-hidden', 'false');
+      document.getElementById('mobile-drawer-backdrop').hidden = false;
+      document.getElementById('menu-toggle').setAttribute('aria-expanded', 'true');
+    }
+
+    function closeDrawer() {
+      document.getElementById('mobile-drawer').classList.remove('is-open');
+      document.getElementById('mobile-drawer').setAttribute('aria-hidden', 'true');
+      document.getElementById('mobile-drawer-backdrop').hidden = true;
+      document.getElementById('menu-toggle').setAttribute('aria-expanded', 'false');
+    }
+
+    function bindShellActions() {
+      document.getElementById('menu-toggle').addEventListener('click', openDrawer);
+      document.getElementById('drawer-close').addEventListener('click', closeDrawer);
+      document.getElementById('mobile-drawer-backdrop').addEventListener('click', closeDrawer);
+      document.addEventListener('keydown', function (event) { if (event.key === 'Escape') closeDrawer(); });
+      document.getElementById('logout-button').addEventListener('click', function () {
+        const confirmed = window.confirm('Apakah Anda yakin ingin keluar dari sistem?');
+        if (confirmed) {
+          CMS_API.logout().then(function() {
+            window.location.hash = '';
+            if (window.ModuleLogin) {
+              window.ModuleLogin.render();
+            }
+          });
+        }
+      });
+    }
+
+    function initialize() {
+      console.log("ENTER initialize");
+      
+      // Check Auth
+      if (!CMS_API.getToken()) {
+        console.log("No token found. Rendering Login.");
+        if (window.ModuleLogin) {
+          window.ModuleLogin.render();
+        } else {
+          document.body.innerHTML = '<h1>Sistem Keamanan Gagal Dimuat.</h1>';
+        }
+        return;
+      }
+      
+      // Initialize Shell
+      document.getElementById('user-initials').textContent = 'AD'; // Admin Initial
+      bindShellActions();
+      window.navigate(activePage);
+      console.log("EXIT initialize");
+    }
+
+    window.initializeCMS = initialize;
+    initialize();
+  }());
+</script>

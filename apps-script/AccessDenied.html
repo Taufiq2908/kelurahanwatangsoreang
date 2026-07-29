@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <base target="_top">
+    <meta charset="utf-8">
+    <?!= include('Styles'); ?>
+  </head>
+  <body class="access-page">
+    <main class="access-card" aria-labelledby="access-title">
+      <div class="access-icon" aria-hidden="true">!</div>
+      <p class="eyebrow">CMS INTERNAL</p>
+      <h1 id="access-title">Akses belum diizinkan</h1>
+      <p><?= reason ?></p>
+      <? if (email) { ?><p class="account-line">Akun saat ini: <strong><?= email ?></strong></p><? } ?>
+      <p class="support-copy">Jika Anda adalah petugas Kelurahan Watang Soreang, hubungi administrator untuk menambahkan email Google Anda ke daftar akses.</p>
+    </main>
+  </body>
+</html>

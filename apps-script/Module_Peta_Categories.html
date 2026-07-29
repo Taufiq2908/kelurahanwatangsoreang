@@ -1,0 +1,85 @@
+<script>
+window.PetaCategories = {
+  loadCategories: async function() {
+    CMS_UI.showLoader('Memuat kategori...');
+    try {
+      const res = await CMS_API.getRecords('PetaKategori');
+      window.PetaState.categories = (res && res.items) ? res.items : ((res && res.data) ? res.data : (Array.isArray(res) ? res : []));
+      this.renderCategoryList();
+    } catch(e) {
+      CMS_UI.toast(e.message, 'error');
+    } finally {
+      CMS_UI.hideLoader();
+    }
+  },
+
+  renderCategoryList: function() {
+    const container = document.getElementById('peta-content');
+    if (!container) return;
+
+    let html = `
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-xl font-bold">Kategori Peta</h2>
+        <button class="btn btn-primary flex items-center gap-1" id="cat-btn-add">
+          <span class="material-icons-outlined text-[18px]">add</span> Tambah Kategori
+        </button>
+      </div>
+
+      <div class="card overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-surface-50 border-b border-surface-200 text-sm text-surface-500">
+              <th class="p-4 font-semibold w-16">ID</th>
+              <th class="p-4 font-semibold w-24">Ikon</th>
+              <th class="p-4 font-semibold">Nama Kategori</th>
+              <th class="p-4 font-semibold text-right">Aksi</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-surface-100">
+    `;
+
+    if (window.PetaState.categories.length === 0) {
+      html += `<tr><td colspan="4" class="p-8 text-center text-surface-500">Belum ada kategori.</td></tr>`;
+    } else {
+      window.PetaState.categories.forEach(item => {
+        let iconHtml = item.icon ? item.icon : '-';
+        html += `
+          <tr class="hover:bg-surface-50 transition-colors group">
+            <td class="p-4 text-surface-500 font-mono text-xs">${item.id}</td>
+            <td class="p-4 text-surface-500 font-mono text-xs">${iconHtml}</td>
+            <td class="p-4">
+              <span class="px-2 py-1 bg-${item.color}-100 text-${item.color}-800 rounded-md text-sm font-semibold">
+                ${item.name}
+              </span>
+            </td>
+            <td class="p-4 text-right">
+              <button class="icon-button text-blue-600 hover:bg-blue-50" onclick="if(window.PetaCategories.showCategoryForm) window.PetaCategories.showCategoryForm('${item.id}'); else CMS_UI.toast('Module belum dimuat', 'error');" title="Edit">
+                <span class="material-icons-outlined text-[18px]">edit</span>
+              </button>
+              <button class="icon-button text-rose-600 hover:bg-rose-50 ml-1" onclick="if(window.PetaCategories.deleteCategoryItem) window.PetaCategories.deleteCategoryItem('${item.id}', '${item.name.replace(/'/g, "\\'")}'); else CMS_UI.toast('Module belum dimuat', 'error');" title="Hapus">
+                <span class="material-icons-outlined text-[18px]">delete</span>
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    html += `
+          </tbody>
+        </table>
+      </div>
+    `;
+
+    container.innerHTML = html;
+
+    document.getElementById('cat-btn-add').onclick = () => {
+      if (window.PetaCategories.showCategoryForm) {
+        window.PetaCategories.showCategoryForm(null);
+      } else {
+        CMS_UI.toast('Module Form belum dimuat!', 'error');
+      }
+    };
+  }
+};
+</script>

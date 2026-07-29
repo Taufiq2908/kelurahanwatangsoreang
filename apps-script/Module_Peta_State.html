@@ -1,0 +1,26 @@
+<script>
+window.PetaState = {
+  view: 'list',
+  catView: 'list',
+  activeTab: 'lokasi',
+  items: [],
+  categories: [],
+  page: 1,
+  limit: 10,
+  search: '',
+  categoryFilter: '',
+  currentId: null,
+  catCurrentId: null
+};
+
+window.PetaHelpers = {
+  getCategoryName: function(id) {
+    const c = window.PetaState.categories.find(x => String(x.id) === String(id));
+    return c ? c.name : '-';
+  },
+  getCategoryColor: function(id) {
+    const c = window.PetaState.categories.find(x => String(x.id) === String(id));
+    return c && c.color ? c.color : 'surface';
+  }
+};
+</script>

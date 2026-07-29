@@ -1,0 +1,93 @@
+<div id="toast-container" class="toast-container"></div>
+
+<div id="confirm-modal" class="modal-backdrop">
+  <div class="modal-content">
+    <h3 id="confirm-title" class="modal-title">Konfirmasi</h3>
+    <p id="confirm-body" class="modal-body">Apakah Anda yakin?</p>
+    <div class="modal-actions">
+      <button id="confirm-cancel" class="btn btn-outline">Batal</button>
+      <button id="confirm-ok" class="btn btn-danger">Ya, Hapus</button>
+    </div>
+  </div>
+</div>
+
+<div id="full-loader" class="loader-overlay">
+  <div class="loader-spinner"></div>
+  <div id="loader-text" class="loader-text">Memuat...</div>
+</div>
+
+<script>
+window.CMS_UI = {
+  toast: function(message, type) {
+    type = type || 'success';
+    const container = document.getElementById('toast-container');
+    const el = document.createElement('div');
+    el.className = 'toast toast-' + type;
+    el.innerHTML = message;
+    container.appendChild(el);
+    setTimeout(() => {
+      el.style.opacity = '0';
+      setTimeout(() => el.remove(), 300);
+    }, 3000);
+  },
+
+  showLoader: function(text = 'Memuat...') {
+    document.getElementById('loader-text').innerText = text;
+    document.getElementById('full-loader').classList.add('is-active');
+  },
+  
+  hideLoader: function() {
+    document.getElementById('full-loader').classList.remove('is-active');
+  },
+  
+  escapeHtml: function(value) {
+    if (!value) return '';
+    return String(value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  },
+  
+  confirm: function(title, message, confirmText, confirmClass) {
+    confirmText = confirmText || 'Ya, Lanjutkan';
+    confirmClass = confirmClass || 'btn-primary';
+    return new Promise((resolve) => {
+      const modal = document.getElementById('confirm-modal');
+      document.getElementById('confirm-title').innerText = title;
+      document.getElementById('confirm-body').innerText = message;
+      
+      const btnOk = document.getElementById('confirm-ok');
+      const btnCancel = document.getElementById('confirm-cancel');
+      
+      btnOk.innerText = confirmText;
+      btnOk.className = 'btn ' + confirmClass;
+      
+      const cleanup = () => {
+        modal.classList.remove('is-open');
+        btnOk.removeEventListener('click', onOk);
+        btnCancel.removeEventListener('click', onCancel);
+      };
+      
+      const onOk = () => { cleanup(); resolve(true); };
+      const onCancel = () => { cleanup(); resolve(false); };
+      
+      btnOk.addEventListener('click', onOk);
+      btnCancel.addEventListener('click', onCancel);
+      
+      modal.classList.add('is-open');
+    });
+  },
+  
+  getDriveImageUrl: function(urlOrId) {
+    if (!urlOrId) return '';
+    // If it's already a full HTTP URL (like Cloudinary), return as is
+    if (urlOrId.startsWith('http://') || urlOrId.startsWith('https://')) {
+      return urlOrId;
+    }
+    // Otherwise assume it's a Drive ID
+    return 'https://drive.google.com/uc?export=view&id=' + urlOrId;
+  }
+};
+</script>

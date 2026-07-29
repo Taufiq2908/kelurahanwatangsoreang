@@ -1,0 +1,135 @@
+<script>
+window.PetaList = {
+  loadData: async function() {
+    CMS_UI.showLoader('Memuat data...');
+    try {
+      const [resLokasi, resKategori] = await Promise.all([
+        CMS_API.getRecords('Peta', { 
+          page: window.PetaState.page, limit: window.PetaState.limit, search: window.PetaState.search, 
+          category: window.PetaState.categoryFilter, sortBy: 'display_order', sortOrder: 'asc' 
+        }),
+        CMS_API.getRecords('PetaKategori')
+      ]);
+      
+      window.PetaState.items = (resLokasi && resLokasi.items) ? resLokasi.items : ((resLokasi && resLokasi.data) ? resLokasi.data : (Array.isArray(resLokasi) ? resLokasi : []));
+      window.PetaState.totalItems = (resLokasi && resLokasi.total) ? resLokasi.total : window.PetaState.items.length;
+      window.PetaState.categories = (resKategori && resKategori.items) ? resKategori.items : ((resKategori && resKategori.data) ? resKategori.data : (Array.isArray(resKategori) ? resKategori : []));
+      
+      this.renderList();
+    } catch(e) {
+      CMS_UI.toast('Error loadData: ' + e.message, 'error');
+    } finally {
+      CMS_UI.hideLoader();
+    }
+  },
+
+  renderList: function() {
+    const container = document.getElementById('peta-content');
+    if (!container) return;
+    
+    let categoryOptions = '<option value="">Semua Kategori</option>';
+    window.PetaState.categories.forEach(c => {
+      categoryOptions += `<option value="${c.id}" ${window.PetaState.categoryFilter === c.id ? 'selected' : ''}>${c.name}</option>`;
+    });
+
+    let html = `
+      <div class="flex justify-between items-center mb-6">
+        <div class="flex gap-2 items-center flex-1 max-w-xl">
+          <input type="text" id="peta-search" class="form-control" placeholder="Cari lokasi..." value="${window.PetaState.search}">
+          <select id="peta-category-filter" class="form-control max-w-[200px]">
+            ${categoryOptions}
+          </select>
+          <button class="btn" id="peta-btn-search">Cari</button>
+        </div>
+        <button class="btn btn-primary flex items-center gap-1" id="peta-btn-add">
+          <span class="material-icons-outlined text-[18px]">add</span> Tambah Lokasi
+        </button>
+      </div>
+
+      <div class="card overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-surface-50 border-b border-surface-200 text-sm text-surface-500">
+              <th class="p-4 font-semibold w-16">Urutan</th>
+              <th class="p-4 font-semibold">Nama Lokasi</th>
+              <th class="p-4 font-semibold">Kategori</th>
+              <th class="p-4 font-semibold">Status</th>
+              <th class="p-4 font-semibold text-right">Aksi</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-surface-100">
+    `;
+
+    if (window.PetaState.items.length === 0) {
+      html += "<tr></tr>";
+    } else {
+      window.PetaState.items.forEach(item => {
+        const catName = window.PetaHelpers.getCategoryName(item.category_id);
+        const catColor = window.PetaHelpers.getCategoryColor(item.category_id);
+        
+        let featHtml = '';
+        if (item.featured === 'TRUE') {
+          featHtml = '<span class="material-icons-outlined text-yellow-500 text-[16px]" title="Featured">star</span>';
+        }
+        
+        let addrHtml = item.address ? item.address : '-';
+        html += `
+          <tr class="hover:bg-surface-50 transition-colors group">
+            <td class="p-4 text-surface-500 font-mono text-xs">${item.display_order || '-'}</td>
+            <td class="p-4 font-semibold">${item.name || '-'}
+              ${featHtml}
+            </td>
+            <td class="p-4"><span class="px-2 py-1 bg-${catColor}-100 text-${catColor}-800 rounded-md text-xs font-semibold">${catName}</span></td>
+            <td class="p-4 text-surface-600 text-sm">${addrHtml}</td>
+            <td class="p-4 text-right">
+              <button class="icon-button text-blue-600 hover:bg-blue-50" onclick="if(window.PetaForm) window.PetaForm.showForm('${item.id}'); else CMS_UI.toast('Module Form belum dimuat', 'error');" title="Edit">
+                <span class="material-icons-outlined text-[18px]">edit</span>
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+    let disabledPrev = window.PetaState.page <= 1 ? 'disabled' : '';
+    let disabledNext = window.PetaState.items.length < window.PetaState.limit ? 'disabled' : '';
+
+    html += `
+          </tbody>
+        </table>
+      </div>
+      <div class="flex justify-between items-center mt-6">
+        <p class="text-sm text-surface-500">Menampilkan halaman ${window.PetaState.page}</p>
+        <div class="flex gap-2">
+          <button class="btn btn-outline" id="peta-btn-prev" ${disabledPrev}>Sebelumnya</button>
+          <button class="btn btn-outline" id="peta-btn-next" ${disabledNext}>Selanjutnya</button>
+        </div>
+      </div>
+    `;
+
+    container.innerHTML = html;
+
+    // Binds
+    document.getElementById('peta-btn-search').onclick = () => {
+      window.PetaState.search = document.getElementById('peta-search').value;
+      window.PetaState.categoryFilter = document.getElementById('peta-category-filter').value;
+      window.PetaState.page = 1;
+      this.loadData();
+    };
+
+    document.getElementById('peta-btn-add').onclick = () => {
+      if (window.PetaForm) {
+        window.PetaForm.showForm();
+      } else {
+        CMS_UI.toast('Module Form belum dimuat!', 'error');
+      }
+    };
+
+    const prevBtn = document.getElementById('peta-btn-prev');
+    if (prevBtn) prevBtn.onclick = () => { if (window.PetaState.page > 1) { window.PetaState.page--; this.loadData(); } };
+    
+    const nextBtn = document.getElementById('peta-btn-next');
+    if (nextBtn) nextBtn.onclick = () => { window.PetaState.page++; this.loadData(); };
+  }
+};
+</script>
+

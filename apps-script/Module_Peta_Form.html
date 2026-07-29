@@ -1,0 +1,482 @@
+<script>
+window.PetaForm = {
+  showForm: async function(id = null) {
+    window.PetaState.view = 'form';
+    window.PetaState.currentId = id;
+    let data = { name: '', category_id: '', description: '', address: '', latitude: '', longitude: '', status: 'publish', display_order: '' };
+    
+    if (id) {
+      CMS_UI.showLoader('Memuat data...');
+      try {
+        data = await CMS_API.getRecord('Peta', id);
+      } catch(e) {
+        CMS_UI.toast('Gagal memuat data', 'error');
+        window.PetaState.view = 'list';
+        if (window.Module_Peta) window.Module_Peta.render(document.querySelector('#app-content'));
+        return;
+      } finally {
+        CMS_UI.hideLoader();
+      }
+    }
+    
+    this.renderForm(data, id);
+  },
+
+  renderForm: function(data, id) {
+    const container = document.getElementById('peta-content');
+    if (!container) return;
+
+    // Build Category Options
+    let catOptions = '<option value="">-- Pilih Kategori --</option>';
+    if (window.PetaState.categories && window.PetaState.categories.length > 0) {
+      window.PetaState.categories.forEach(c => {
+        const selected = data.category_id === String(c.id) ? 'selected' : '';
+        catOptions += `<option value="${c.id}" ${selected}>${c.name}</option>`;
+      });
+    }
+
+    const html = `
+      <div class="flex items-center gap-4 mb-6">
+        <button class="btn btn-outline flex items-center gap-1" id="peta-btn-back">
+          <span class="material-icons-outlined text-[18px]">arrow_back</span> Kembali
+        </button>
+        <h2 class="text-xl font-bold">${id ? 'Edit Lokasi' : 'Tambah Lokasi Baru'}</h2>
+      </div>
+
+      <form id="peta-form" class="space-y-6">
+        <div class="card p-6">
+          <h3 class="text-lg font-semibold mb-4 text-surface-800">Informasi Dasar</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label class="block text-sm font-semibold text-surface-700 mb-1">Nama Lokasi <span class="text-rose-500">*</span></label>
+              <input type="text" id="form-name" class="input w-full" value="${data.name || ''}" required placeholder="Contoh: Kantor Kelurahan Watang Soreang">
+            </div>
+            
+            <div>
+              <label class="block text-sm font-semibold text-surface-700 mb-1">Kategori <span class="text-rose-500">*</span></label>
+              <select id="form-category" class="input w-full" required>
+                ${catOptions}
+              </select>
+            </div>
+
+            <div class="col-span-full">
+              <label class="block text-sm font-semibold text-surface-700 mb-1">Alamat Lengkap <span class="text-rose-500">*</span></label>
+              <textarea id="form-address" class="input w-full" rows="2" required placeholder="Masukkan alamat lengkap lokasi">${data.address || ''}</textarea>
+            </div>
+
+            <div class="col-span-full">
+              <label class="block text-sm font-semibold text-surface-700 mb-1">Deskripsi Singkat</label>
+              <textarea id="form-description" class="input w-full" rows="3" placeholder="Deskripsi singkat mengenai lokasi ini...">${data.description || ''}</textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="card overflow-hidden">
+          <div class="p-6 border-b border-surface-200 bg-surface-50">
+            <h3 class="text-lg font-semibold text-surface-800">Peta & Titik Lokasi</h3>
+            <p class="text-sm text-surface-500 mt-1">Cari lokasi atau geser pin pada peta untuk menetapkan koordinat.</p>
+          </div>
+          
+          <div class="p-6">
+            <!-- Search Bar -->
+            <div class="mb-6 relative">
+              <div class="flex flex-col sm:flex-row gap-3">
+                <div class="relative flex-1">
+                  <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <span class="material-icons-outlined text-surface-400">search</span>
+                  </div>
+                  <input type="text" id="form-maps-url" class="input w-full pl-10 bg-white" placeholder="Ketik nama tempat atau paste link Google Maps...">
+                </div>
+                <button type="button" class="btn btn-primary whitespace-nowrap px-6" id="peta-btn-autofill">
+                  Cari Lokasi
+                </button>
+              </div>
+            </div>
+            
+            <!-- Map Container -->
+            <div class="rounded-xl overflow-hidden border border-surface-200 shadow-inner mb-6 bg-surface-100 relative group">
+              <div id="map-preview" class="w-full aspect-video md:aspect-[2/1] z-10 relative"></div>
+              <div class="absolute inset-0 pointer-events-none rounded-xl ring-1 ring-inset ring-black/5 z-20"></div>
+            </div>
+
+            <!-- Coordinates (Manual Adjustment) -->
+            <div class="bg-surface-50 rounded-xl p-4 border border-surface-200">
+              <div class="flex items-center justify-between mb-3 cursor-pointer" onclick="document.getElementById('coord-fields').classList.toggle('hidden')">
+                <div class="flex items-center gap-2">
+                  <span class="material-icons-outlined text-surface-500 text-[18px]">place</span>
+                  <span class="text-sm font-semibold text-surface-700">Koordinat (Terisi Otomatis)</span>
+                </div>
+                <span class="text-xs text-primary-600 font-medium hover:underline">Tampilkan penyesuaian manual</span>
+              </div>
+              
+              <div id="coord-fields" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 pt-4 border-t border-surface-200">
+                <div>
+                  <label class="block text-xs font-semibold text-surface-600 mb-1">Latitude <span class="text-rose-500">*</span></label>
+                  <input type="text" id="form-latitude" class="input w-full font-mono text-sm" value="${data.latitude || ''}" required placeholder="-3.9955118">
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-surface-600 mb-1">Longitude <span class="text-rose-500">*</span></label>
+                  <input type="text" id="form-longitude" class="input w-full font-mono text-sm" value="${data.longitude || ''}" required placeholder="119.6268884">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card p-6">
+          <h3 class="text-lg font-semibold mb-4 text-surface-800">Galeri Foto</h3>
+          <p class="text-sm text-surface-500 mb-4">Tambahkan foto-foto lokasi ini. Foto pertama akan menjadi foto utama.</p>
+          
+          <input type="hidden" id="form-images" value='${data.images || "[]"}'>
+          
+          <div class="mb-4">
+            <label class="btn btn-outline cursor-pointer inline-flex items-center gap-2">
+              <span class="material-icons-outlined text-[20px]">add_photo_alternate</span>
+              Unggah Foto
+              <input type="file" id="peta-upload-input" class="hidden" accept="image/jpeg, image/png, image/webp">
+            </label>
+          </div>
+          
+          <div id="peta-gallery-preview" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+          </div>
+        </div>
+
+        <div class="card p-6">
+          <h3 class="text-lg font-semibold mb-4 text-surface-800">Pengaturan Tampilan</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label class="block text-sm font-semibold text-surface-700 mb-1">Urutan Tampil (Opsional)</label>
+              <input type="number" id="form-display-order" class="input w-full" value="${data.display_order || ''}" placeholder="Angka, misal: 1">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-surface-700 mb-1">Status</label>
+              <select id="form-status" class="input w-full">
+                <option value="publish" ${data.status === 'publish' ? 'selected' : ''}>Publish (Ditampilkan)</option>
+                <option value="draft" ${data.status === 'draft' ? 'selected' : ''}>Draft (Sembunyikan)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex gap-4 pt-4 border-t border-surface-200">
+          <button type="submit" class="btn btn-primary">Simpan Lokasi</button>
+          <button type="button" class="btn btn-outline" id="peta-btn-cancel">Batal</button>
+        </div>
+      </form>
+    `;
+
+    container.innerHTML = html;
+
+    // Events
+    document.getElementById('peta-btn-back').onclick = async () => {
+      if (window.CMS_FORM_DIRTY) {
+        const confirmExit = await CMS_UI.confirm('Batal Edit', 'Perubahan belum disimpan. Yakin ingin kembali?', 'Ya, Kembali', 'btn-danger');
+        if (!confirmExit) return;
+      }
+      window.CMS_FORM_DIRTY = false;
+      window.PetaState.view = 'list';
+      if (window.Module_Peta) window.Module_Peta.render(document.querySelector('#app-content'));
+    };
+
+    document.getElementById('peta-btn-cancel').onclick = async () => {
+      if (window.CMS_FORM_DIRTY) {
+        const confirmExit = await CMS_UI.confirm('Batal Edit', 'Perubahan belum disimpan. Yakin ingin kembali?', 'Ya, Kembali', 'btn-danger');
+        if (!confirmExit) return;
+      }
+      window.CMS_FORM_DIRTY = false;
+      window.PetaState.view = 'list';
+      if (window.Module_Peta) window.Module_Peta.render(document.querySelector('#app-content'));
+    };
+
+    document.getElementById('peta-form').onsubmit = (e) => {
+      e.preventDefault();
+      this.saveForm(id);
+    };
+
+    this.initGalleryLogic();
+    this.initNominatimLogic();
+    this.initLeafletLogic(data);
+  },
+
+  initLeafletLogic: function(data) {
+    const mapPreview = document.getElementById('map-preview');
+    if (!mapPreview) return;
+    
+    let mapInstance = null;
+    let mapMarker = null;
+
+    const buildMap = (lat, lng, name) => {
+      try {
+        const defaultLat = -4.0123;
+        const defaultLng = 119.6231;
+        
+        const parseCoord = (c) => {
+          if (typeof c === 'number') return c;
+          if (!c) return null;
+          const parsed = parseFloat(c.toString().replace(',', '.'));
+          return isNaN(parsed) ? null : parsed;
+        };
+        
+        const initLat = parseCoord(lat) || defaultLat;
+        const initLng = parseCoord(lng) || defaultLng;
+        const zoom = (lat && lng) ? 16 : 13;
+
+        if (window.PetaForm.currentMapInstance) {
+          window.PetaForm.currentMapInstance.remove();
+        }
+
+        mapInstance = L.map('map-preview').setView([initLat, initLng], zoom);
+        window.PetaForm.currentMapInstance = mapInstance;
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; OpenStreetMap'
+        }).addTo(mapInstance);
+
+        mapMarker = L.marker([initLat, initLng], { draggable: true }).addTo(mapInstance);
+        if (name) mapMarker.bindPopup(String(name)).openPopup();
+        
+        mapMarker.on('dragend', function (e) {
+          const position = mapMarker.getLatLng();
+          document.getElementById('form-latitude').value = position.lat.toFixed(6);
+          document.getElementById('form-longitude').value = position.lng.toFixed(6);
+        });
+        
+        mapInstance.on('click', function(e) {
+          mapMarker.setLatLng(e.latlng);
+          document.getElementById('form-latitude').value = e.latlng.lat.toFixed(6);
+          document.getElementById('form-longitude').value = e.latlng.lng.toFixed(6);
+        });
+      } catch (err) {
+        console.error("Leaflet Error:", err);
+        CMS_UI.toast("Gagal memuat peta: " + err.message, "error");
+      }
+    };
+
+    if (!window.L) {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+      document.head.appendChild(link);
+      
+      const script = document.createElement('script');
+      script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+      script.crossOrigin = 'anonymous'; 
+      script.onload = () => {
+        setTimeout(() => buildMap(data.latitude, data.longitude, data.name), 100);
+      };
+      document.head.appendChild(script);
+    } else {
+      setTimeout(() => buildMap(data.latitude, data.longitude, data.name), 100);
+    }
+
+    const updateMapFromInputs = () => {
+      const latVal = document.getElementById('form-latitude').value;
+      const lngVal = document.getElementById('form-longitude').value;
+      if (!latVal || !lngVal) return;
+      
+      const lat = parseFloat(latVal.toString().replace(',', '.'));
+      const lng = parseFloat(lngVal.toString().replace(',', '.'));
+      
+      if (!isNaN(lat) && !isNaN(lng) && mapInstance && mapMarker) {
+        const newPos = new L.LatLng(lat, lng);
+        mapMarker.setLatLng(newPos);
+        mapInstance.setView(newPos, 16);
+      }
+    };
+
+    document.getElementById('form-latitude').addEventListener('change', updateMapFromInputs);
+    document.getElementById('form-longitude').addEventListener('change', updateMapFromInputs);
+    document.getElementById('form-latitude').addEventListener('input', updateMapFromInputs);
+    document.getElementById('form-longitude').addEventListener('input', updateMapFromInputs);
+  },
+
+  initNominatimLogic: function() {
+    const btnAutofill = document.getElementById('peta-btn-autofill');
+    if (!btnAutofill) return;
+
+    btnAutofill.onclick = async () => {
+      const query = document.getElementById('form-maps-url').value.trim();
+      if (!query) {
+        CMS_UI.toast('Silakan masukkan Link Maps atau Nama Tempat terlebih dahulu', 'warning');
+        return;
+      }
+
+      CMS_UI.showLoader('Mencari lokasi...');
+      
+      const handleNominatimSuccess = async (lat, lng, displayName) => {
+        document.getElementById('form-latitude').value = lat.toFixed(6);
+        document.getElementById('form-longitude').value = lng.toFixed(6);
+        document.getElementById('form-latitude').dispatchEvent(new Event('change'));
+        
+        if (displayName && !document.getElementById('form-address').value) {
+          document.getElementById('form-address').value = displayName;
+        }
+
+        CMS_UI.toast('Lokasi berhasil ditemukan');
+        CMS_UI.hideLoader();
+      };
+      
+      const handleNominatimError = (errMessage) => {
+        CMS_UI.toast(errMessage, 'error');
+        CMS_UI.hideLoader();
+      };
+
+      try {
+        if (query.indexOf('http') === 0) {
+          google.script.run
+            .withSuccessHandler(async (res) => {
+              if (!res || (!res.latitude && !res.longitude)) {
+                handleNominatimError(res && res.error ? res.error : 'Koordinat tidak ditemukan di URL ini');
+                return;
+              }
+              
+              let lat = res.latitude;
+              let lng = res.longitude;
+              let displayName = '';
+              
+              CMS_UI.showLoader('Menerjemahkan koordinat...');
+              try {
+                const nomRes = await fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lng);
+                const nomData = await nomRes.json();
+                if (nomData && nomData.display_name) displayName = nomData.display_name;
+              } catch(e) { 
+                console.error('Nominatim reverse error:', e); 
+              }
+              
+              handleNominatimSuccess(lat, lng, displayName);
+            })
+            .withFailureHandler((err) => {
+              handleNominatimError(err.message || 'Gagal mengekstrak URL');
+            })
+            .cmsExtractGoogleMapsUrl(query);
+            
+        } else {
+          const nomRes = await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&q=' + encodeURIComponent(query));
+          const nomData = await nomRes.json();
+          if (!nomData || nomData.length === 0) {
+            handleNominatimError('Tempat tidak ditemukan di OpenStreetMap');
+            return;
+          }
+          
+          let lat = parseFloat(nomData[0].lat);
+          let lng = parseFloat(nomData[0].lon);
+          let displayName = nomData[0].display_name;
+          
+          if (!document.getElementById('form-name').value) {
+             document.getElementById('form-name').value = query;
+          }
+          
+          handleNominatimSuccess(lat, lng, displayName);
+        }
+      } catch (err) {
+        handleNominatimError(err.message);
+      }
+    };
+  },
+
+  initGalleryLogic: function() {
+    let currentGallery = [];
+    try {
+      const raw = document.getElementById('form-images').value;
+      currentGallery = JSON.parse(raw || '[]');
+    } catch(e) {}
+
+    const renderPreview = () => {
+      const container = document.getElementById('peta-gallery-preview');
+      if (!container) return;
+      
+      if (currentGallery.length === 0) {
+        container.innerHTML = '<div class="col-span-full p-4 border-2 border-dashed border-surface-200 rounded-lg text-center text-surface-500 text-sm">Belum ada foto yang ditambahkan</div>';
+        return;
+      }
+      
+      let html = '';
+      currentGallery.forEach((url, idx) => {
+        html += `
+          <div class="relative group aspect-square rounded-lg border border-surface-200 overflow-hidden bg-surface-50">
+            <img src="${url}" class="w-full h-full object-cover" alt="Gallery">
+            <button type="button" class="absolute top-2 right-2 w-8 h-8 bg-black/50 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-rose-500" onclick="window.PetaForm.removeImage(${idx})" title="Hapus foto">
+              <span class="material-icons-outlined text-[18px]">delete</span>
+            </button>
+            ${idx === 0 ? '<div class="absolute bottom-0 left-0 right-0 bg-primary-500/90 text-white text-[10px] py-1 text-center font-semibold">FOTO UTAMA</div>' : ''}
+          </div>
+        `;
+      });
+      container.innerHTML = html;
+      document.getElementById('form-images').value = JSON.stringify(currentGallery);
+    };
+
+    window.PetaForm.removeImage = (index) => {
+      currentGallery.splice(index, 1);
+      renderPreview();
+    };
+
+    const fileInput = document.getElementById('peta-upload-input');
+    if (fileInput) {
+      fileInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        CMS_UI.showLoader('Mengunggah gambar...');
+        try {
+          const result = await CMS_API.uploadMedia(file, 'peta');
+          if (result && result.fileUrl) {
+            currentGallery.push(result.fileUrl);
+            renderPreview();
+            CMS_UI.toast('Foto berhasil diunggah');
+          } else {
+            throw new Error("Format respons upload tidak valid");
+          }
+        } catch(err) {
+          console.error("Upload error:", err);
+          CMS_UI.toast('Gagal mengunggah foto: ' + err.message, 'error');
+        } finally {
+          CMS_UI.hideLoader();
+          fileInput.value = ''; // Reset input
+        }
+      });
+    }
+
+    renderPreview();
+  },
+
+  saveForm: async function(id) {
+    const data = {
+      name: document.getElementById('form-name').value.trim(),
+      category_id: document.getElementById('form-category').value,
+      address: document.getElementById('form-address').value.trim(),
+      description: document.getElementById('form-description').value.trim(),
+      latitude: document.getElementById('form-latitude').value.trim(),
+      longitude: document.getElementById('form-longitude').value.trim(),
+      display_order: document.getElementById('form-display-order').value || '',
+      status: document.getElementById('form-status').value,
+      images: document.getElementById('form-images').value
+    };
+
+    // Validation
+    if (!data.name || !data.category_id || !data.latitude || !data.longitude || !data.address) {
+      CMS_UI.toast('Mohon lengkapi semua field bertanda bintang (*)', 'warning');
+      return;
+    }
+
+    CMS_UI.showLoader('Menyimpan data...');
+    try {
+      if (id) {
+        await CMS_API.updateRecord('Peta', id, data);
+        CMS_UI.toast('Data lokasi berhasil diperbarui');
+      } else {
+        await CMS_API.createRecord('Peta', data);
+        CMS_UI.toast('Data lokasi berhasil ditambahkan');
+      }
+      
+      // Refresh list
+      window.PetaState.view = 'list';
+      if (window.PetaList) window.PetaList.loadData();
+    } catch(e) {
+      CMS_UI.toast(e.message, 'error');
+    } finally {
+      CMS_UI.hideLoader();
+    }
+  }
+};
+</script>

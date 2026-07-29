@@ -1,0 +1,104 @@
+/** Central configuration for the CMS Apps Script project. */
+const CMS_VALUES = {
+  schemaVersion: '1.0.0',
+  appsScriptVersion: '1.0.0',
+  timezone: 'Asia/Makassar',
+  editorialStatus: ['draft', 'publish'],
+  reportStatus: ['Masuk', 'Diproses', 'Selesai'],
+  priority: ['important', 'normal'],
+  anonymous: ['TRUE', 'FALSE'],
+  generatedSettingKeys: ['spreadsheet_id', 'spreadsheet_url', 'root_folder_id', 'db_folder_id', 'backup_folder_id', 'docs_folder_id'],
+  mutableSystemKeys: ['last_setup', 'spreadsheet_created_at'],
+};
+
+const AUTH_CONFIG = {
+  MAX_LOGIN_ATTEMPTS: 5,
+  LOCKOUT_DURATION_MINS: 30,
+  SESSION_DEFAULT_HOURS: 12,
+  SESSION_REMEMBER_DAYS: 30,
+  IDLE_TIMEOUT_MINS: 30,
+  PBKDF2_ITERATIONS: 1000,
+  TOKEN_LENGTH_BYTES: 64
+};
+
+const CMS_CONFIG = {
+  spreadsheetName: 'CMS Website Kelurahan Watang Soreang',
+  rootFolderName: 'Website Kelurahan Watang Soreang',
+  schemaVersion: CMS_VALUES.schemaVersion,
+  appsScriptVersion: CMS_VALUES.appsScriptVersion,
+  timezone: CMS_VALUES.timezone,
+  properties: {
+    spreadsheetId: 'CMS_SPREADSHEET_ID',
+    rootFolderId: 'CMS_ROOT_FOLDER_ID',
+  },
+  webApp: {
+    title: 'CMS Kelurahan Watang Soreang',
+    publicWebsiteUrl: 'https://watangsoreang.parepare.go.id',
+    allowedEmailKey: 'allowed_email',
+    allowedEmailCategory: 'Security',
+    navigation: [
+      { id: 'dashboard', label: 'Dashboard', icon: 'home', group: 'DASHBOARD' },
+      { id: 'berita', label: 'Berita', icon: 'article', group: 'PRIMARY ACTIVITIES' },
+      { id: 'pengumuman', label: 'Pengumuman', icon: 'campaign', group: 'PRIMARY ACTIVITIES' },
+      { id: 'laporan', label: 'Aspirasi Warga', icon: 'inbox', group: 'PRIMARY ACTIVITIES' },
+      { id: 'edukasi', label: 'Edukasi', icon: 'eco', group: 'CONTENT' },
+      { id: 'faq', label: 'FAQ', icon: 'help_outline', group: 'CONTENT' },
+      { id: 'layanan', label: 'Layanan', icon: 'assignment', group: 'PUBLIC SERVICES' },
+      { id: 'peta', label: 'Peta', icon: 'map', group: 'PUBLIC SERVICES' },
+      { id: 'profil', label: 'Profil', icon: 'person', group: 'GOVERNMENT' },
+      { id: 'aparatur', label: 'Aparatur', icon: 'groups', group: 'GOVERNMENT' },
+      { id: 'kontak', label: 'Kontak', icon: 'phone', group: 'GOVERNMENT' },
+      { id: 'sampah', label: 'Data Terhapus', icon: 'delete_sweep', group: 'SYSTEM' },
+    ],
+  },
+  theme: {
+    headerBackground: '#059669',
+    headerFontColor: '#ffffff',
+  },
+  sheets: {
+    Berita: ['id', 'slug', 'title', 'content', 'image', 'image_public_id', 'image_provider', 'category', 'author', 'published_at', 'updated_at', 'deleted_at', 'tags', 'status'],
+    Pengumuman: ['id', 'title', 'content', 'priority', 'start_date', 'end_date', 'attachment', 'attachment_public_id', 'attachment_provider', 'status', 'created_at', 'updated_at', 'deleted_at'],
+    Edukasi: ['id', 'slug', 'title', 'content', 'image', 'image_public_id', 'image_provider', 'category', 'author', 'source', 'tags', 'published_at', 'updated_at', 'deleted_at', 'status'],
+    Laporan: ['id', 'tracking_code', 'created_at', 'anonymous', 'reporter_name', 'reporter_phone', 'category', 'location', 'description', 'image', 'image_public_id', 'image_provider', 'status', 'response', 'updated_at', 'deleted_at', 'notification_sent', 'timeline'],
+    Layanan: ['id', 'slug', 'title', 'category', 'description', 'requirements', 'icon', 'featured', 'status', 'created_at', 'updated_at', 'deleted_at'],
+    FAQ: ['id', 'question', 'answer', 'category', 'status', 'created_at', 'updated_at', 'deleted_at'],
+    Peta: ['id', 'slug', 'name', 'category_id', 'description', 'address', 'geometry_type', 'geometry_coordinates', 'latitude', 'longitude', 'images', 'phone', 'website', 'opening_hours', 'display_order', 'featured', 'status', 'created_at', 'updated_at', 'deleted_at'],
+    PetaKategori: ['id', 'slug', 'name', 'icon', 'color', 'created_at', 'updated_at'],
+    Aparatur: ['id', 'name', 'position', 'photo', 'photo_public_id', 'photo_provider', 'nip', 'sort_order', 'is_active', 'created_at', 'updated_at', 'deleted_at'],
+    Kontak: ['id', 'category', 'name', 'position', 'phone', 'whatsapp', 'email', 'address', 'maps', 'photo', 'photo_public_id', 'photo_provider', 'sort_order', 'is_active', 'created_at', 'updated_at', 'deleted_at'],
+    Profil: ['key', 'value', 'updated_at'],
+    System: ['key', 'value', 'description'],
+    Log: ['timestamp', 'module', 'action', 'user', 'description'],
+  },
+  folders: ['Database', 'Backup', 'Documentation'],
+  statusValues: {
+    editorial: CMS_VALUES.editorialStatus,
+    report: CMS_VALUES.reportStatus,
+  },
+  priorityValues: CMS_VALUES.priority,
+  anonymousValues: CMS_VALUES.anonymous,
+  categories: {
+    berita: ['Kegiatan Kelurahan', 'UMKM', 'Masyarakat', 'Lingkungan'],
+    edukasi: ['Perubahan Iklim', 'Sampah', 'Lingkungan Pesisir', 'Air & Energi'],
+    laporan: ['Lingkungan', 'Infrastruktur', 'Pelayanan Kelurahan', 'Keamanan', 'Saran'],
+    layanan: ['Administrasi Kependudukan', 'Perizinan', 'Surat Keterangan', 'Lainnya'],
+    peta: [], // Dynamic via PetaKategori
+  },
+  validations: [
+    { sheet: 'Berita', header: 'status', values: CMS_VALUES.editorialStatus },
+    { sheet: 'Pengumuman', header: 'status', values: CMS_VALUES.editorialStatus },
+    { sheet: 'Pengumuman', header: 'priority', values: CMS_VALUES.priority },
+    { sheet: 'Laporan', header: 'status', values: CMS_VALUES.reportStatus },
+    { sheet: 'Laporan', header: 'anonymous', values: CMS_VALUES.anonymous },
+    { sheet: 'Layanan', header: 'status', values: CMS_VALUES.editorialStatus },
+    { sheet: 'FAQ', header: 'status', values: CMS_VALUES.editorialStatus },
+    { sheet: 'Peta', header: 'status', values: CMS_VALUES.editorialStatus },
+  ],
+  defaultSettings: [],
+  systemSettings: [
+    ['schema_version', CMS_VALUES.schemaVersion, 'CMS spreadsheet schema version'],
+    ['apps_script_version', CMS_VALUES.appsScriptVersion, 'Apps Script project version'],
+    ['timezone', CMS_VALUES.timezone, 'CMS timezone'],
+    ['future_version_notes', '', 'Reserved for future migration notes'],
+  ],
+};

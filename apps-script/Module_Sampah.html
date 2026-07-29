@@ -1,0 +1,108 @@
+<script>
+window.Module_Sampah = (function() {
+  
+  async function loadData(container) {
+    CMS_UI.showLoader('Memuat data terhapus...');
+    try {
+      const trash = await window.CMS_API.getTrashRecords();
+      renderList(container, trash);
+    } catch(e) {
+      CMS_UI.toast('Gagal memuat data terhapus', 'error');
+    } finally {
+      CMS_UI.hideLoader();
+    }
+  }
+
+  function renderList(container, items) {
+    let html = `
+      <div class="table-container overflow-x-auto">
+        <table class="table min-w-full">
+          <thead>
+            <tr>
+              <th>Modul (Tabel)</th>
+              <th>Judul / Identifier</th>
+              <th>Tanggal Dihapus</th>
+              <th style="width:200px">Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+    `;
+    
+    if (items.length === 0) {
+      html += `<tr><td colspan="4" style="text-align:center; padding:30px;">Belum ada data yang terhapus di tempat sampah.</td></tr>`;
+    } else {
+      html += items.map(item => `
+        <tr>
+          <td><span class="badge badge-warning">${item.sheet}</span></td>
+          <td><strong>${item.title}</strong></td>
+          <td>${new Date(item.deleted_at).toLocaleString('id-ID')}</td>
+          <td>
+            <button class="btn btn-primary btn-restore" data-id="${item.id}" data-sheet="${item.sheet}" style="padding:4px 8px; font-size:12px;">Restore</button>
+            <button class="btn btn-danger btn-hard-delete" data-id="${item.id}" data-sheet="${item.sheet}" style="padding:4px 8px; font-size:12px;">Hapus Permanen</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+    
+    html += `</tbody></table></div>`;
+    
+    const contentDiv = document.getElementById('sampah-content');
+    contentDiv.innerHTML = html;
+    
+    contentDiv.querySelectorAll('.btn-restore').forEach(btn => {
+      btn.onclick = async () => {
+        const id = btn.dataset.id;
+        const sheet = btn.dataset.sheet;
+        CMS_UI.showLoader('Mengembalikan data...');
+        try {
+          await window.CMS_API.restoreRecord(sheet, id);
+          CMS_UI.toast('Data berhasil direstore');
+          loadData(container);
+        } catch (e) {
+          CMS_UI.toast(e.message, 'error');
+        } finally {
+          CMS_UI.hideLoader();
+        }
+      };
+    });
+    
+    contentDiv.querySelectorAll('.btn-hard-delete').forEach(btn => {
+      btn.onclick = async () => {
+        const id = btn.dataset.id;
+        const sheet = btn.dataset.sheet;
+        const confirmed = await CMS_UI.confirm('Hapus Permanen', 'Data akan dihapus secara permanen dan tidak bisa dikembalikan. Lanjutkan?', 'Ya, Hapus Permanen', 'btn-danger');
+        if (!confirmed) return;
+        
+        CMS_UI.showLoader('Menghapus permanen...');
+        try {
+          await window.CMS_API.hardDeleteRecord(sheet, id);
+          CMS_UI.toast('Data berhasil dihapus permanen');
+          loadData(container);
+        } catch (e) {
+          CMS_UI.toast(e.message, 'error');
+        } finally {
+          CMS_UI.hideLoader();
+        }
+      };
+    });
+  }
+
+  function render(container) {
+    container.innerHTML = `
+      <section>
+        <div class="page-heading">
+          <div>
+            <p class="eyebrow">CMS INTERNAL</p>
+            <h1>Data Terhapus</h1>
+            <p>Data yang dihapus (soft delete) dapat direstore dari sini atau dihapus secara permanen.</p>
+          </div>
+        </div>
+        <div id="sampah-content"></div>
+      </section>
+    `;
+    loadData(container);
+  }
+
+  return { render };
+})();
+</script>

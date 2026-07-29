@@ -1,0 +1,154 @@
+<template id="module-login">
+  <div id="login-overlay" class="fixed inset-0 z-50 min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 overflow-y-auto">
+    <div class="sm:mx-auto sm:w-full sm:max-w-md text-center">
+      <div class="mx-auto h-16 w-16 bg-emerald-600 text-white rounded-full flex items-center justify-center mb-4 shadow-lg">
+        <span class="material-icons-outlined text-3xl">admin_panel_settings</span>
+      </div>
+      <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+        CMS Kelurahan Watang Soreang
+      </h2>
+      <p class="mt-2 text-center text-sm text-gray-600">
+        Autentikasi diwajibkan untuk mengakses sistem.
+      </p>
+    </div>
+
+    <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+      <div class="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+        <form id="form-login" class="space-y-6">
+          
+          <div id="login-error-alert" class="hidden rounded-md bg-red-50 p-4 mb-4 border border-red-200">
+            <div class="flex">
+              <div class="flex-shrink-0">
+                <span class="material-icons-outlined text-red-400 text-[20px]">error_outline</span>
+              </div>
+              <div class="ml-3">
+                <h3 class="text-sm font-medium text-red-800" id="login-error-message">
+                  Error
+                </h3>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label for="username" class="block text-sm font-medium text-gray-700">
+              Username
+            </label>
+            <div class="mt-1">
+              <input id="username" name="username" type="text" autocomplete="username" required class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
+            </div>
+          </div>
+
+          <div>
+            <label for="password" class="block text-sm font-medium text-gray-700">
+              Password
+            </label>
+            <div class="mt-1 relative">
+              <input id="password" name="password" type="password" autocomplete="current-password" required class="appearance-none block w-full px-3 py-2 pr-10 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
+              <button type="button" id="toggle-password" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-500">
+                <span class="material-icons-outlined text-[18px]" id="toggle-password-icon">visibility</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between">
+            <div class="flex items-center">
+              <input id="remember-me" name="remember-me" type="checkbox" class="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded">
+              <label for="remember-me" class="ml-2 block text-sm text-gray-900">
+                Ingat Saya (30 Hari)
+              </label>
+            </div>
+          </div>
+
+          <div>
+            <button id="btn-login" type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors">
+              <span class="material-icons-outlined text-[18px] mr-2">login</span> Masuk Sistem
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+window.ModuleLogin = {
+  render: function() {
+    const template = document.getElementById('module-login');
+    document.body.style.backgroundColor = "#f9fafb"; // Tailwind gray-50
+    
+    const mainContent = document.getElementById('main-content');
+    if (mainContent) {
+      mainContent.innerHTML = '';
+      mainContent.appendChild(template.content.cloneNode(true));
+    }
+    
+    // Bind form submit safely
+    const form = document.getElementById('form-login');
+    if (form) {
+      form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        window.handleLogin();
+      });
+    }
+
+    // Bind Show/Hide Password
+    const togglePasswordBtn = document.getElementById('toggle-password');
+    const passwordInput = document.getElementById('password');
+    const toggleIcon = document.getElementById('toggle-password-icon');
+    if (togglePasswordBtn && passwordInput) {
+      togglePasswordBtn.addEventListener('click', function() {
+        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        passwordInput.setAttribute('type', type);
+        toggleIcon.textContent = type === 'password' ? 'visibility' : 'visibility_off';
+      });
+    }
+  }
+};
+
+window.handleLogin = function() {
+  const usernameInput = document.getElementById('username');
+  const passwordInput = document.getElementById('password');
+  const rememberMeInput = document.getElementById('remember-me');
+  const btn = document.getElementById('btn-login');
+  const errorAlert = document.getElementById('login-error-alert');
+  const errorMsg = document.getElementById('login-error-message');
+
+  const username = usernameInput.value.trim();
+  const password = passwordInput.value;
+  const rememberMe = rememberMeInput.checked;
+
+  if (!username || !password) return;
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="material-icons-outlined animate-spin text-[18px] mr-2">sync</span> Memproses...';
+  errorAlert.classList.add('hidden');
+
+  CMS_API.login(username, password, rememberMe)
+    .then(data => {
+      btn.disabled = false;
+      btn.innerHTML = '<span class="material-icons-outlined text-[18px] mr-2">login</span> Masuk Sistem';
+      
+      CMS_API.setToken(data.token, rememberMe);
+      
+      if (window.CMS_UI && window.CMS_UI.toast) {
+        CMS_UI.toast(data.message || 'Login berhasil.', 'success');
+      }
+      
+      // Remove overlay and initialize shell properly
+      document.body.style.backgroundColor = ""; // Reset body background
+      const mainContent = document.getElementById('main-content');
+      if (mainContent) mainContent.innerHTML = '';
+      
+      window.location.hash = '#dashboard';
+      if (window.initializeCMS) {
+        window.initializeCMS();
+      }
+    })
+    .catch(err => {
+      btn.disabled = false;
+      btn.innerHTML = '<span class="material-icons-outlined text-[18px] mr-2">login</span> Masuk Sistem';
+      errorMsg.textContent = err.message || 'Login gagal';
+      errorAlert.classList.remove('hidden');
+    });
+};
+</script>
