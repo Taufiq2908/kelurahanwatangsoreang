@@ -92,6 +92,7 @@ const Session = {
       return sessionData;
     } catch (e) {
       AppLogger.error('Session', 'validate_ERROR', 'Failed to parse session data', e);
+      this.destroy(token);
       return null;
     }
   },
@@ -102,7 +103,110 @@ const Session = {
    */
   destroy: function(token) {
     if (!token) return;
-    CacheService.getScriptCache().remove(this.CACHE_PREFIX + token);
-    PropertiesService.getScriptProperties().deleteProperty(this.PROP_PREFIX + token);
+    try {
+      CacheService.getScriptCache().remove(this.CACHE_PREFIX + token);
+    } catch(e) {}
+    try {
+      PropertiesService.getScriptProperties().deleteProperty(this.PROP_PREFIX + token);
+    } catch(e) {}
+  },
+
+  /**
+   * Garbage collector for expired, malformed, or orphaned sessions.
+   * @param {string} userId - The userId to enforce max active sessions.
+   * @returns {object} Statistics of the cleanup process.
+   */
+  cleanup: function(userId) {
+    const stats = { scanned: 0, deletedExpired: 0, deletedCorrupted: 0, remainingActive: 0 };
+    let lock = null;
+    
+    try {
+      lock = LockService.getScriptLock();
+      // Try to acquire lock for up to 5 seconds
+      if (!lock.tryLock(5000)) {
+        AppLogger.warn('Session', 'CLEANUP_LOCK_TIMEOUT', 'Could not acquire lock for session cleanup, skipping.');
+        return stats; // Fail-safe: skip cleanup if locked
+      }
+
+      const scriptProperties = PropertiesService.getScriptProperties();
+      const allProps = scriptProperties.getProperties();
+      const nowMs = new Date().getTime();
+      
+      // We safely fetch the idle limit, assuming AUTH_CONFIG exists
+      const idleLimitMs = (typeof AUTH_CONFIG !== 'undefined' ? AUTH_CONFIG.IDLE_TIMEOUT_MINS : 30) * 60 * 1000;
+      
+      const activeSessionsForUser = [];
+
+      for (const key in allProps) {
+        if (key.startsWith(this.PROP_PREFIX)) {
+          stats.scanned++;
+          const token = key.substring(this.PROP_PREFIX.length);
+          const sessionString = allProps[key];
+          
+          let isCorrupted = false;
+          let isExpired = false;
+          let sessionData = null;
+
+          try {
+            sessionData = JSON.parse(sessionString);
+            
+            // Validation Consistency Check
+            if (!sessionData || !sessionData.userId || !sessionData.expiresAt || !sessionData.lastActivity || !sessionData.role) {
+              isCorrupted = true;
+            }
+          } catch (e) {
+            isCorrupted = true;
+          }
+
+          if (isCorrupted) {
+            this.destroy(token);
+            stats.deletedCorrupted++;
+            continue;
+          }
+
+          // Expiry Check
+          if (nowMs > sessionData.expiresAt || (nowMs - sessionData.lastActivity > idleLimitMs)) {
+            isExpired = true;
+          }
+
+          if (isExpired) {
+            this.destroy(token);
+            stats.deletedExpired++;
+            continue;
+          }
+
+          // Valid Session
+          if (sessionData.userId === userId) {
+            activeSessionsForUser.push({ token: token, lastActivity: sessionData.lastActivity });
+          }
+          stats.remainingActive++;
+        }
+      }
+
+      // Max Sessions Enforcer
+      const maxSessions = (typeof AUTH_CONFIG !== 'undefined' && AUTH_CONFIG.MAX_SESSIONS_PER_USER) ? AUTH_CONFIG.MAX_SESSIONS_PER_USER : 10;
+      if (activeSessionsForUser.length > maxSessions) {
+        // Sort by oldest lastActivity first
+        activeSessionsForUser.sort((a, b) => a.lastActivity - b.lastActivity);
+        const sessionsToDelete = activeSessionsForUser.length - maxSessions;
+        
+        for (let i = 0; i < sessionsToDelete; i++) {
+          this.destroy(activeSessionsForUser[i].token);
+          stats.remainingActive--;
+        }
+      }
+
+    } catch (e) {
+      // Complete fail-safe for the entire cleanup process
+      AppLogger.error('Session', 'CLEANUP_ERROR', 'Session cleanup failed, bypassing.', e);
+    } finally {
+      if (lock) {
+        try {
+          lock.releaseLock();
+        } catch(e) {}
+      }
+    }
+
+    return stats;
   }
 };

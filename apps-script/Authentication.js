@@ -53,6 +53,17 @@ const Authentication = {
       cache.remove(this.BF_PREFIX + username);
       cache.remove(lockKey);
 
+      // Garbage Collect Old Sessions (Fail-safe)
+      try {
+        const stats = Session.cleanup(username);
+        if (stats) {
+          const logMessage = `\nSession Cleanup\nScanned : ${stats.scanned}\nExpired : ${stats.deletedExpired}\nCorrupted : ${stats.deletedCorrupted}\nRemaining : ${stats.remainingActive}`;
+          AppLogger.info('AUTH', 'SESSION_CLEANUP', logMessage);
+        }
+      } catch (e) {
+        AppLogger.error('AUTH', 'SESSION_CLEANUP_FAILED', 'Bypassing session cleanup error to allow login.', e);
+      }
+
       // Create Session
       const token = Session.create(username, 'superadmin', rememberMe);
       Audit.logEvent('AUTH', 'LOGIN_SUCCESS', username, 'User logged in successfully.');

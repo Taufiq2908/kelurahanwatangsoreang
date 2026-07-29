@@ -8,11 +8,15 @@ function runSimulatedTests() {
 
 function testLogin() {
   try {
-    const result = apiLogin('admin', 'passwordrahasia', false);
+    const result = apiLogin('admin', 'adminwatsor', false);
     Logger.log("Login Result: " + JSON.stringify(result));
   } catch (e) {
     Logger.log("Login Error: " + e.toString() + "\nStack: " + e.stack);
   }
+}
+
+function resetAdminPassword() {
+  Logger.log(Authentication.setupAdminAccount('admin', 'adminwatsor'));
 }
 
 function getEvaluatedHtml() { return HtmlService.createTemplateFromFile('Index').evaluate().getContent(); }
