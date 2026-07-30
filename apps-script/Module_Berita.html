@@ -13,13 +13,13 @@ window.Module_Berita = (function() {
   };
 
   const getLocalDraft = () => {
-    try { return JSON.parse(localStorage.getItem('cms_draft_berita')); } catch(e) { return null; }
+    try { return JSON.parse(localStorage.getItem('cms_draft_berita_v2')); } catch(e) { return null; }
   };
   const saveLocalDraft = (data) => {
-    localStorage.setItem('cms_draft_berita', JSON.stringify(data));
+    localStorage.setItem('cms_draft_berita_v2', JSON.stringify(data));
   };
   const clearLocalDraft = () => {
-    localStorage.removeItem('cms_draft_berita');
+    localStorage.removeItem('cms_draft_berita_v2');
   };
 
   async function loadData() {
