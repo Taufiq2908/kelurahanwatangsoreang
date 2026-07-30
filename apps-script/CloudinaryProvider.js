@@ -64,10 +64,12 @@ const CloudinaryProvider = {
       throw new Error('Gagal mengupload file: ' + result.error.message);
     }
     
-    // Apply optimizations f_auto, q_auto
-    // secure_url format: https://res.cloudinary.com/<cloud_name>/image/upload/v12345/<public_id>.<ext>
-    // We insert "f_auto,q_auto" after "/upload/"
-    const optimizedUrl = result.secure_url.replace('/upload/', '/upload/f_auto,q_auto/');
+    // Apply optimizations f_auto, q_auto only for images
+    // secure_url format: https://res.cloudinary.com/<cloud_name>/<resource_type>/upload/v12345/<public_id>.<ext>
+    let optimizedUrl = result.secure_url;
+    if (result.resource_type === 'image' && !optimizedUrl.toLowerCase().endsWith('.pdf')) {
+      optimizedUrl = optimizedUrl.replace('/upload/', '/upload/f_auto,q_auto/');
+    }
     
     Audit.logEvent('Cloudinary', 'Upload', (typeof session !== 'undefined' ? session.userId : 'SYSTEM'), `Uploaded ${publicId} successfully.`);
     
