@@ -187,11 +187,11 @@ window.Module_Berita = (function() {
         <div style="background:#fff; padding:24px; border-radius:12px; border:1px solid #e2e8f0;">
           <div class="form-group">
             <label class="form-label">Judul Berita</label>
-            <input type="text" id="form-title" class="form-control" value="${(data.title||'').replace(/"/g, '&quot;')}">
+            <input type="text" id="form-title" class="form-control" value="${CMS_UI.escapeHtml(data.title)}">
           </div>
           <div class="form-group">
             <label class="form-label">Isi Berita</label>
-            <textarea id="form-content" class="form-control" style="min-height:300px">${data.content}</textarea>
+            <textarea id="form-content" class="form-control" style="min-height:300px">${CMS_UI.escapeHtml(data.content)}</textarea>
           </div>
         </div>
         
@@ -220,18 +220,18 @@ window.Module_Berita = (function() {
             </div>
             <div class="form-group">
               <label class="form-label">Tags (Pisahkan dengan koma)</label>
-              <input type="text" id="form-tags" class="form-control" value="${(data.tags||'').replace(/"/g, '&quot;')}">
+              <input type="text" id="form-tags" class="form-control" value="${CMS_UI.escapeHtml(data.tags)}">
             </div>
             <div class="form-group">
               <div id="image-preview" class="image-preview mb-4 ${data.image ? '' : 'hidden'}">
-                <img src="${CMS_UI.getDriveImageUrl(data.image) || ''}" alt="Preview" style="max-width: 100%; border-radius: 4px;">
-                <div class="mt-2 text-sm text-surface-500 break-all">${data.image || ''}</div>
+                <img src="${CMS_UI.escapeHtml(CMS_UI.getDriveImageUrl(data.image))}" alt="Preview" style="max-width: 100%; border-radius: 4px;">
+                <div class="mt-2 text-sm text-surface-500 break-all">${CMS_UI.escapeHtml(data.image)}</div>
               </div>
               <label class="form-label">URL Cover / Upload Baru</label>
-              <input type="text" id="form-image" class="form-control mb-2" value="${(data.image||'').replace(/"/g, '&quot;')}" placeholder="https://...">
+              <input type="text" id="form-image" class="form-control mb-2" value="${CMS_UI.escapeHtml(data.image)}" placeholder="https://...">
               <input type="file" id="form-upload" accept="image/jpeg, image/png, image/webp" class="form-control" style="font-size:12px;">
-              <input type="hidden" id="form-image_public_id" value="${data.imageMeta ? data.imageMeta.publicId : ''}">
-              <input type="hidden" id="form-image_provider" value="${data.imageMeta ? data.imageMeta.provider : ''}">
+              <input type="hidden" id="form-image_public_id" value="${CMS_UI.escapeHtml(data.imageMeta ? data.imageMeta.publicId : '')}">
+              <input type="hidden" id="form-image_provider" value="${CMS_UI.escapeHtml(data.imageMeta ? data.imageMeta.provider : '')}">
             </div>
           </div>
         </div>
