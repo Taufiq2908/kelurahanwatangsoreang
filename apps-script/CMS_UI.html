@@ -49,6 +49,55 @@ window.CMS_UI = {
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#39;');
   },
+
+  escapeAttribute: function(value) {
+    if (!value) return '';
+    return String(value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  },
+
+  escapeText: function(value) {
+    if (!value) return '';
+    return String(value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  },
+
+  sanitizeImageUrl: function(value) {
+    let original = String(value || "").trim();
+    let sanitized = original;
+    if (sanitized.includes("<") || sanitized.includes(">") || sanitized.includes('"') || sanitized.includes("'")) {
+        sanitized = "";
+    }
+    if (sanitized) {
+        try {
+            const url = new URL(sanitized);
+            if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+                sanitized = "";
+            }
+        } catch (e) {
+            sanitized = "";
+        }
+    }
+    if (sanitized === "" && original !== "") {
+        if (window.CMS_UI) CMS_UI.toast("URL gambar tidak valid.", "error");
+    }
+    return sanitized;
+  },
+
+  safeSetText: function(element, value) {
+    element.textContent = String(value || "");
+  },
+
+  safeSetAttribute: function(element, attribute, value) {
+    element.setAttribute(attribute, String(value || ""));
+  },
+
   
   confirm: function(title, message, confirmText, confirmClass) {
     confirmText = confirmText || 'Ya, Lanjutkan';

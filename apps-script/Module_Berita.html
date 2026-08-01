@@ -228,7 +228,7 @@ window.Module_Berita = (function() {
                 <div class="mt-2 text-sm text-surface-500 break-all">${CMS_UI.escapeHtml(data.image)}</div>
               </div>
               <label class="form-label">URL Cover / Upload Baru</label>
-              <input type="text" id="form-image" class="form-control mb-2" value="${CMS_UI.escapeHtml(data.image)}" placeholder="https://...">
+              <input type="text" id="form-image" class="form-control mb-2" value="${CMS_UI.escapeHtml(data.image)}" placeholder="https:/...">
               <input type="file" id="form-upload" accept="image/jpeg, image/png, image/webp" class="form-control" style="font-size:12px;">
               <input type="hidden" id="form-image_public_id" value="${CMS_UI.escapeHtml(data.imageMeta ? data.imageMeta.publicId : '')}">
               <input type="hidden" id="form-image_provider" value="${CMS_UI.escapeHtml(data.imageMeta ? data.imageMeta.provider : '')}">

@@ -62,15 +62,15 @@ window.Module_Aparatur = (function() {
         <tr class="hover:bg-surface-50/50 group">
           <td class="p-4">
             <div class="w-10 h-10 rounded-full bg-surface-200 overflow-hidden flex items-center justify-center">
-              ${item.photo ? `<img src="${CMS_UI.getDriveImageUrl(item.photo) || item.photo}" class="w-full h-full object-cover">` : `<span class="material-icons-outlined text-surface-400">person</span>`}
+              ${item.photo ? `<img src="${CMS_UI.sanitizeImageUrl(CMS_UI.getDriveImageUrl(item.photo) || item.photo)}" class="w-full h-full object-cover">` : `<span class="material-icons-outlined text-surface-400">person</span>`}
             </div>
           </td>
           <td class="p-4">
-            <p class="font-bold text-surface-900">${item.name}</p>
-            <p class="text-xs text-surface-500">${item.nip || '-'}</p>
+            <p class="font-bold text-surface-900">${CMS_UI.escapeHtml(item.name)}</p>
+            <p class="text-xs text-surface-500">${CMS_UI.escapeHtml(item.nip || '-')}</p>
           </td>
-          <td class="p-4 text-sm text-surface-600">${item.position || '-'}</td>
-          <td class="p-4 text-sm text-surface-600">${item.sort_order || '0'}</td>
+          <td class="p-4 text-sm text-surface-600">${CMS_UI.escapeHtml(item.position || '-')}</td>
+          <td class="p-4 text-sm text-surface-600">${CMS_UI.escapeHtml(item.sort_order || '0')}</td>
           <td class="p-4">
             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${item.is_active === 'TRUE' || item.is_active === 'true' || item.is_active === true ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}">
               ${(item.is_active === 'TRUE' || item.is_active === 'true' || item.is_active === true) ? 'Aktif' : 'Nonaktif'}
@@ -79,7 +79,7 @@ window.Module_Aparatur = (function() {
           <td class="p-4 text-right">
             <div class="flex justify-end gap-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
               <button class="btn-edit p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" data-id="${item.id}"><span class="material-icons-outlined text-[18px]">edit</span></button>
-              <button class="btn-delete p-2 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors" data-id="${item.id}" data-title="${CMS_UI.escapeHtml(item.name)}"><span class="material-icons-outlined text-[18px]">delete</span></button>
+              <button class="btn-delete p-2 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors" data-id="${item.id}" data-title="${CMS_UI.escapeAttribute(item.name)}"><span class="material-icons-outlined text-[18px]">delete</span></button>
             </div>
           </td>
         </tr>
@@ -144,19 +144,19 @@ window.Module_Aparatur = (function() {
       <div style="background:#fff; padding:24px; border-radius:12px; border:1px solid #e2e8f0; max-width:600px; margin:0 auto;">
         <div class="form-group">
           <label class="form-label">Nama Lengkap</label>
-          <input type="text" id="form-name" class="form-control" value="${data.name || ''}">
+          <input type="text" id="form-name" class="form-control" value="${CMS_UI.escapeAttribute(data.name || '')}">
         </div>
         <div class="form-group">
           <label class="form-label">NIP (Opsional)</label>
-          <input type="text" id="form-nip" class="form-control" value="${data.nip || ''}">
+          <input type="text" id="form-nip" class="form-control" value="${CMS_UI.escapeAttribute(data.nip || '')}">
         </div>
         <div class="form-group">
           <label class="form-label">Jabatan</label>
-          <input type="text" id="form-position" class="form-control" value="${data.position || ''}">
+          <input type="text" id="form-position" class="form-control" value="${CMS_UI.escapeAttribute(data.position || '')}">
         </div>
         <div class="form-group">
           <label class="form-label">Urutan Tampil</label>
-          <input type="number" id="form-sort" class="form-control" value="${data.sort_order || '1'}">
+          <input type="number" id="form-sort" class="form-control" value="${CMS_UI.escapeAttribute(data.sort_order || '1')}">
         </div>
         <div class="form-group">
           <label class="form-label">Status Aktif</label>
@@ -167,13 +167,13 @@ window.Module_Aparatur = (function() {
         </div>
         <div class="form-group">
           <div id="image-preview" class="image-preview mb-4 ${data.photo ? '' : 'hidden'}">
-            <img src="${CMS_UI.getDriveImageUrl(data.photo) || data.photo || ''}" style="max-width:200px; border-radius:8px;">
+            <img src="${CMS_UI.sanitizeImageUrl(CMS_UI.getDriveImageUrl(data.photo) || data.photo || '')}" style="max-width:200px; border-radius:8px;">
           </div>
           <label class="form-label">Foto URL / Upload</label>
-          <input type="text" id="form-photo" class="form-control mb-2" value="${data.photo || ''}">
+          <input type="text" id="form-photo" class="form-control mb-2" value="${CMS_UI.sanitizeImageUrl(data.photo || '')}">
           <input type="file" id="form-upload" accept="image/png, image/jpeg, image/webp" class="form-control" style="font-size:12px;">
-          <input type="hidden" id="form-photo_public_id" value="${data.photoMeta ? data.photoMeta.publicId : ''}">
-          <input type="hidden" id="form-photo_provider" value="${data.photoMeta ? data.photoMeta.provider : ''}">
+          <input type="hidden" id="form-photo_public_id" value="${CMS_UI.escapeAttribute(data.photoMeta ? data.photoMeta.publicId : '')}">
+          <input type="hidden" id="form-photo_provider" value="${CMS_UI.escapeAttribute(data.photoMeta ? data.photoMeta.provider : '')}">
         </div>
       </div>
     `;
@@ -199,7 +199,12 @@ window.Module_Aparatur = (function() {
         document.getElementById('form-photo_provider').value = res.provider;
         
         const previewEl = document.getElementById('image-preview');
-        previewEl.innerHTML = `<img src="${res.fileUrl}" style="max-width:200px; border-radius:8px;">`;
+        previewEl.innerHTML = "";
+        const img = document.createElement("img");
+        img.src = CMS_UI.sanitizeImageUrl(res.fileUrl);
+        img.style.maxWidth = "200px";
+        img.style.borderRadius = "8px";
+        previewEl.appendChild(img);
         previewEl.classList.remove('hidden');
         
         CMS_UI.toast('Foto berhasil diupload');

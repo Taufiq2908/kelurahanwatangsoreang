@@ -294,6 +294,20 @@ window.PetaForm = {
     const btnAutofill = document.getElementById('peta-btn-autofill');
     if (!btnAutofill) return;
 
+    let currentNominatimRequestId = 0;
+
+    const extractPlaceNameFromUrl = (url) => {
+      try {
+        const match = url.match(/\/(?:place|search)\/([^\/?#]+)/);
+        if (match && match[1]) {
+          let name = match[1];
+          name = decodeURIComponent(name.replace(/\+/g, ' ').replace(/%20/g, ' '));
+          return name.trim();
+        }
+      } catch(e) {}
+      return null;
+    };
+
     btnAutofill.onclick = async () => {
       const query = document.getElementById('form-maps-url').value.trim();
       if (!query) {
@@ -301,60 +315,86 @@ window.PetaForm = {
         return;
       }
 
+      const requestId = Date.now();
+      currentNominatimRequestId = requestId;
+
+      document.getElementById('form-address').value = '';
+      document.getElementById('form-latitude').value = '';
+      document.getElementById('form-longitude').value = '';
+
+      btnAutofill.disabled = true;
       CMS_UI.showLoader('Mencari lokasi...');
       
-      const handleNominatimSuccess = async (lat, lng, displayName) => {
+      const handleNominatimSuccess = async (lat, lng, displayName, reqId, placeName) => {
+        if (reqId !== currentNominatimRequestId) return;
+        
         document.getElementById('form-latitude').value = lat.toFixed(6);
         document.getElementById('form-longitude').value = lng.toFixed(6);
         document.getElementById('form-latitude').dispatchEvent(new Event('change'));
         
-        if (displayName && !document.getElementById('form-address').value) {
+        if (displayName) {
           document.getElementById('form-address').value = displayName;
+        }
+
+        if (placeName && !document.getElementById('form-name').value) {
+          document.getElementById('form-name').value = placeName;
         }
 
         CMS_UI.toast('Lokasi berhasil ditemukan');
         CMS_UI.hideLoader();
+        btnAutofill.disabled = false;
       };
       
-      const handleNominatimError = (errMessage) => {
+      const handleNominatimError = (errMessage, reqId) => {
+        if (reqId !== currentNominatimRequestId) return;
+        
         CMS_UI.toast(errMessage, 'error');
         CMS_UI.hideLoader();
+        btnAutofill.disabled = false;
       };
 
       try {
         if (query.indexOf('http') === 0) {
-          google.script.run
-            .withSuccessHandler(async (res) => {
-              if (!res || (!res.latitude && !res.longitude)) {
-                handleNominatimError(res && res.error ? res.error : 'Koordinat tidak ditemukan di URL ini');
-                return;
-              }
-              
-              let lat = res.latitude;
-              let lng = res.longitude;
-              let displayName = '';
-              
+          try {
+            const res = await CMS_API.extractGoogleMapsUrl(query);
+            
+            if (
+              !res || 
+              !res.success || 
+              res.latitude === undefined || 
+              res.longitude === undefined
+            ) {
+              handleNominatimError(res && res.error ? res.error : 'Koordinat tidak ditemukan di URL ini', requestId);
+              return;
+            }
+            
+            let lat = res.latitude;
+            let lng = res.longitude;
+            let displayName = '';
+            
+            if (requestId === currentNominatimRequestId) {
               CMS_UI.showLoader('Menerjemahkan koordinat...');
-              try {
-                const nomRes = await fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lng);
-                const nomData = await nomRes.json();
-                if (nomData && nomData.display_name) displayName = nomData.display_name;
-              } catch(e) { 
-                console.error('Nominatim reverse error:', e); 
-              }
-              
-              handleNominatimSuccess(lat, lng, displayName);
-            })
-            .withFailureHandler((err) => {
-              handleNominatimError(err.message || 'Gagal mengekstrak URL');
-            })
-            .cmsExtractGoogleMapsUrl(query);
+            }
+            
+            try {
+              const nomRes = await fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lng);
+              const nomData = await nomRes.json();
+              if (nomData && nomData.display_name) displayName = nomData.display_name;
+            } catch(e) { 
+              console.error('Nominatim reverse error:', e); 
+            }
+            
+            const placeName = extractPlaceNameFromUrl(query);
+            handleNominatimSuccess(lat, lng, displayName, requestId, placeName);
+          } catch (err) {
+            handleNominatimError(err.message || 'Gagal mengekstrak URL', requestId);
+          }
             
         } else {
           const nomRes = await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&q=' + encodeURIComponent(query));
           const nomData = await nomRes.json();
           if (!nomData || nomData.length === 0) {
-            handleNominatimError('Tempat tidak ditemukan di OpenStreetMap');
+            handleNominatimError('Tempat tidak ditemukan di OpenStreetMap', requestId);
             return;
           }
           
@@ -366,10 +406,10 @@ window.PetaForm = {
              document.getElementById('form-name').value = query;
           }
           
-          handleNominatimSuccess(lat, lng, displayName);
+          handleNominatimSuccess(lat, lng, displayName, requestId, null);
         }
       } catch (err) {
-        handleNominatimError(err.message);
+        handleNominatimError(err.message || 'Terjadi kesalahan', requestId);
       }
     };
   },

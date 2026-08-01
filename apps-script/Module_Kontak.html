@@ -127,7 +127,7 @@ window.Module_Kontak = (function() {
   async function showForm(id = null) {
     state.view = 'form';
     state.currentId = id;
-    let data = { name: '', category: 'office', position: '', phone: '', whatsapp: '', email: '', address: '', maps: '', photo: '', sort_order: '1', is_active: 'TRUE' };
+    let data = { name: '', category: 'office', position: '', phone: '', whatsapp: '', sort_order: '1', is_active: 'TRUE' };
     
     if (id) {
       CMS_UI.showLoader('Memuat data...');
@@ -172,38 +172,18 @@ window.Module_Kontak = (function() {
           <input type="text" id="form-position" class="form-control" value="${data.position || ''}">
         </div>
         <div class="form-group">
-          <label class="form-label">No. Telepon</label>
+          <label class="form-label">Nomor Telepon</label>
+          <p class="text-xs text-surface-500 mb-1">Contoh: 08123456789</p>
           <input type="text" id="form-phone" class="form-control" value="${data.phone || ''}">
         </div>
         <div class="form-group">
-          <label class="form-label">No. WhatsApp</label>
+          <label class="form-label">Nomor WhatsApp</label>
+          <p class="text-xs text-surface-500 mb-1">Gunakan kode negara tanpa tanda +.<br>Contoh: 628123456789</p>
           <input type="text" id="form-whatsapp" class="form-control" value="${data.whatsapp || ''}">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Email</label>
-          <input type="email" id="form-email" class="form-control" value="${data.email || ''}">
         </div>
         <div class="form-group">
           <label class="form-label">Urutan</label>
           <input type="number" id="form-sort" class="form-control" value="${data.sort_order || '1'}">
-        </div>
-        <div class="form-group" style="grid-column: 1 / -1;">
-          <label class="form-label">Alamat</label>
-          <textarea id="form-address" class="form-control" rows="2">${data.address || ''}</textarea>
-        </div>
-        <div class="form-group" style="grid-column: 1 / -1;">
-          <label class="form-label">Google Maps URL</label>
-          <input type="text" id="form-maps" class="form-control" value="${data.maps || ''}">
-        </div>
-        <div class="form-group" style="grid-column: 1 / -1;">
-          <div id="image-preview" class="image-preview mb-4 ${data.photo ? '' : 'hidden'}">
-            <img src="${CMS_UI.getDriveImageUrl(data.photo) || data.photo || ''}" style="max-width:200px; border-radius:8px;">
-          </div>
-          <label class="form-label">Foto / Ikon (Upload)</label>
-          <input type="text" id="form-photo" class="form-control mb-2" value="${data.photo || ''}" readonly placeholder="URL akan muncul setelah upload">
-          <input type="file" id="form-upload" accept="image/png, image/jpeg, image/webp" class="form-control" style="font-size:12px;">
-          <input type="hidden" id="form-photo_public_id" value="${data.photoMeta ? data.photoMeta.publicId : ''}">
-          <input type="hidden" id="form-photo_provider" value="${data.photoMeta ? data.photoMeta.provider : ''}">
         </div>
       </div>
     `;
@@ -218,27 +198,6 @@ window.Module_Kontak = (function() {
       render();
     };
     document.getElementById('kontak-btn-save').onclick = () => saveItem(id);
-    document.getElementById('form-upload').onchange = async (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      CMS_UI.showLoader('Mengupload foto...');
-      try {
-        const res = await CMS_API.uploadMedia(file, 'Kontak');
-        document.getElementById('form-photo').value = res.fileUrl;
-        document.getElementById('form-photo_public_id').value = res.publicId;
-        document.getElementById('form-photo_provider').value = res.provider;
-        
-        const previewEl = document.getElementById('image-preview');
-        previewEl.innerHTML = `<img src="${res.fileUrl}" style="max-width:200px; border-radius:8px;">`;
-        previewEl.classList.remove('hidden');
-        
-        CMS_UI.toast('Foto berhasil diupload');
-      } catch(err) {
-        CMS_UI.toast(err.message, 'error');
-      } finally {
-        CMS_UI.hideLoader();
-      }
-    };
   }
 
   async function saveItem(id) {
@@ -248,12 +207,12 @@ window.Module_Kontak = (function() {
       position: document.getElementById('form-position').value,
       phone: document.getElementById('form-phone').value,
       whatsapp: document.getElementById('form-whatsapp').value,
-      email: document.getElementById('form-email').value,
-      address: document.getElementById('form-address').value,
-      maps: document.getElementById('form-maps').value,
-      photo: document.getElementById('form-photo').value,
-      photo_public_id: document.getElementById('form-photo_public_id').value,
-      photo_provider: document.getElementById('form-photo_provider').value,
+      email: '',
+      address: '',
+      maps: '',
+      photo: '',
+      photo_public_id: '',
+      photo_provider: '',
       sort_order: document.getElementById('form-sort').value,
       is_active: 'TRUE'
     };

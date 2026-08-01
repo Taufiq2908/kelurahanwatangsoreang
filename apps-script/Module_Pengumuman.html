@@ -185,7 +185,7 @@ window.Module_Pengumuman = (function() {
             </div>
             <div class="form-group">
               <label class="form-label">Lampiran (URL, PDF, DOC, atau Gambar)</label>
-              <input type="text" id="form-attachment" class="form-control mb-2" value="${data.attachment || ''}" placeholder="https://...">
+              <input type="text" id="form-attachment" class="form-control mb-2" value="${data.attachment || ''}" placeholder="https:/...">
               <input type="file" id="form-upload" accept="application/pdf, .doc, .docx, image/jpeg, image/png, image/webp" class="form-control" style="font-size:12px;">
               <input type="hidden" id="form-attachment_public_id" value="${data.attachmentMeta ? data.attachmentMeta.publicId : ''}">
               <input type="hidden" id="form-attachment_provider" value="${data.attachmentMeta ? data.attachmentMeta.provider : ''}">

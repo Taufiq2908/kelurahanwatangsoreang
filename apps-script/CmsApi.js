@@ -580,40 +580,85 @@ function cmsDeletePetaKategori(token, id) { return cmsDeleteRecord(token, 'PetaK
 
 // --- MAPS EXTRACTION ---
 function cmsExtractGoogleMapsUrl(token, url) {
+  console.log("TOKEN", token);
+  console.log("URL", url);
   return Middleware.run(token, (session) => {
-    if (!url || !url.startsWith('https://')) throw new Error('Invalid URL');
+    if (!url || !url.startsWith('http')) throw new Error('Invalid URL');
     
     try {
+      let lat = null;
+      let lng = null;
+      
+      const extractFromText = (rawText) => {
+        let text = rawText;
+        try { text = decodeURIComponent(rawText); } catch(e) {}
+        
+        // Priority 1: Exact PIN location from 3d/4d parameters
+        let match = text.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/);
+        if (match) return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+        
+        // Priority 2: Map center from @ or ll= or q=
+        match = text.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+        if (match) return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+        match = text.match(/center=(-?\d+\.\d+)%2C(-?\d+\.\d+)/);
+        if (match) return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+        match = text.match(/ll=(-?\d+\.\d+),(-?\d+\.\d+)/);
+        if (match) return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+        match = text.match(/q=(-?\d+\.\d+),(-?\d+\.\d+)/);
+        if (match) return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+        match = text.match(/APP_INITIALIZATION_STATE=\[\[\[\[(-?\d+\.\d+),(-?\d+\.\d+)/);
+        if (match) return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) }; 
+        return null;
+      };
+
+      // 1. Try from URL directly
+      let coords = extractFromText(url);
+      if (coords) {
+        console.log("SUCCESS");
+        console.log("COORDS", coords);
+        return { success: true, latitude: coords.lat, longitude: coords.lng };
+      }
+
+      // 2. If short URL, try fetching the redirect location
+      if (url.includes('goo.gl') || url.includes('maps.app')) {
+        const redirRes = UrlFetchApp.fetch(url, {
+          followRedirects: false,
+          muteHttpExceptions: true
+        });
+        const headers = redirRes.getHeaders();
+        const location = headers['Location'] || headers['location'];
+        if (location) {
+          coords = extractFromText(location);
+          if (coords) {
+            console.log("SUCCESS");
+        console.log("COORDS", coords);
+        return { success: true, latitude: coords.lat, longitude: coords.lng };
+          }
+          // Update URL to the resolved location for the next step
+          url = location;
+          console.log("LOCATION", location);
+        }
+      }
+      
+      // 3. Fallback: fetch HTML and search
       const response = UrlFetchApp.fetch(url, {
         followRedirects: true,
         muteHttpExceptions: true
       });
-      
       const html = response.getContentText();
       
-      let lat = null;
-      let lng = null;
+      coords = extractFromText(html);
       
-      const coordMatch = html.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
-      if (coordMatch) {
-        lat = parseFloat(coordMatch[1]);
-        lng = parseFloat(coordMatch[2]);
+      if (coords) {
+        console.log("SUCCESS");
+        console.log("COORDS", coords);
+        return { success: true, latitude: coords.lat, longitude: coords.lng };
       } else {
-        const centerMatch = html.match(/center=(-?\d+\.\d+)%2C(-?\d+\.\d+)/);
-        if (centerMatch) {
-          lat = parseFloat(centerMatch[1]);
-          lng = parseFloat(centerMatch[2]);
-        }
-      }
-      
-      if (lat !== null && lng !== null) {
-        return { success: true, latitude: lat, longitude: lng };
-      } else {
-        return { success: false, error: 'Could not extract coordinates from this Google Maps link. Please enter manually.' };
+        return { success: false, error: 'Tidak dapat mengekstrak koordinat dari link Maps ini. Coba gunakan link panjang atau isi manual.' };
       }
     } catch (e) {
       Logger.log('Error extracting maps url: ' + e.toString());
-      return { success: false, error: e.toString() };
+      return { success: false, error: 'Gagal memproses URL: ' + e.toString() };
     }
   });
 }

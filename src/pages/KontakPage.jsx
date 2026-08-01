@@ -37,6 +37,11 @@ const categoryLabels = {
 }
 
 function ContactCard({ contact, index }) {
+  let waNumber = contact.whatsapp ? String(contact.whatsapp).replace(/[^0-9]/g, '') : '';
+  if (waNumber.startsWith('08')) {
+    waNumber = '628' + waNumber.substring(2);
+  }
+
   return (
     <motion.div variants={fadeUpStaggerItemVariants} className="group bg-white border border-surface-200 rounded-2xl p-5 md:p-6 hover:border-emerald-500/30 hover:shadow-[0_4px_20px_-4px_rgba(16,185,129,0.1)] transition-all duration-300">
       <div className="flex items-start justify-between gap-4 mb-4">
@@ -46,13 +51,19 @@ function ContactCard({ contact, index }) {
               {contact.category || 'Lainnya'}
             </span>
           </div>
-          <h3 className="text-base font-bold text-surface-900 group-hover:text-emerald-700 transition-colors leading-tight mb-1">
-            {contact.name}
-          </h3>
-          {contact.description && (
-            <p className="text-xs text-surface-500 line-clamp-2 leading-relaxed">
-              {contact.description}
-            </p>
+          {contact.position ? (
+            <>
+              <h3 className="text-lg font-black text-surface-900 group-hover:text-emerald-700 transition-colors leading-tight mb-1 uppercase">
+                {contact.position}
+              </h3>
+              <p className="text-sm font-bold text-surface-600 leading-relaxed">
+                {contact.name}
+              </p>
+            </>
+          ) : (
+            <h3 className="text-lg font-black text-surface-900 group-hover:text-emerald-700 transition-colors leading-tight mb-1">
+              {contact.name}
+            </h3>
           )}
         </div>
       </div>
@@ -60,19 +71,21 @@ function ContactCard({ contact, index }) {
       <div className="flex flex-col gap-2 pt-4 border-t border-surface-100">
         <div className="flex items-center gap-2 text-surface-700">
           <Phone className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-          <span className="text-sm font-bold">{contact.phone}</span>
+          <span className="text-xs font-bold text-surface-500">{contact.phone}</span>
         </div>
         
         <div className="flex gap-2 mt-2">
-          <a 
-            href={`tel:${String(contact.phone || '').replace(/[^0-9+]/g, '')}`}
-            className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg bg-surface-100 hover:bg-surface-200 text-surface-700 text-xs font-bold transition-colors"
-          >
-            <PhoneCall className="w-4 h-4 text-surface-600" /> Panggil
-          </a>
-          {contact.whatsapp && (
+          {contact.phone && (
             <a 
-              href={`https://wa.me/${String(contact.whatsapp || '').replace(/[^0-9]/g, '')}`}
+              href={`tel:${String(contact.phone || '').replace(/[^0-9+]/g, '')}`}
+              className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg bg-surface-100 hover:bg-surface-200 text-surface-700 text-xs font-bold transition-colors"
+            >
+              <PhoneCall className="w-4 h-4 text-surface-600" /> Panggil
+            </a>
+          )}
+          {waNumber && (
+            <a 
+              href={`https://wa.me/${waNumber}`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold transition-colors"
