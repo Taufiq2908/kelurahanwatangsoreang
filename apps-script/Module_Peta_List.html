@@ -85,6 +85,9 @@ window.PetaList = {
               <button class="icon-button text-blue-600 hover:bg-blue-50" onclick="if(window.PetaForm) window.PetaForm.showForm('${item.id}'); else CMS_UI.toast('Module Form belum dimuat', 'error');" title="Edit">
                 <span class="material-icons-outlined text-[18px]">edit</span>
               </button>
+              <button class="icon-button text-rose-600 hover:bg-rose-50 ml-1" onclick="if(window.PetaList.deleteItem) window.PetaList.deleteItem('${item.id}', '${(item.name || '').replace(/'/g, "\\'")}'); else CMS_UI.toast('Module belum dimuat', 'error');" title="Hapus">
+                <span class="material-icons-outlined text-[18px]">delete</span>
+              </button>
             </td>
           </tr>
         `;
@@ -129,6 +132,20 @@ window.PetaList = {
     
     const nextBtn = document.getElementById('peta-btn-next');
     if (nextBtn) nextBtn.onclick = () => { window.PetaState.page++; this.loadData(); };
+  },
+  
+  deleteItem: async function(id, title) {
+    if (!confirm(`Apakah Anda yakin ingin menghapus lokasi "${title}"?`)) return;
+    try {
+      CMS_UI.showLoader('Menghapus...');
+      await CMS_API.deleteRecord('Peta', id);
+      CMS_UI.toast('Lokasi berhasil dihapus');
+      this.loadData();
+    } catch(e) {
+      CMS_UI.toast('Gagal menghapus: ' + e.message, 'error');
+    } finally {
+      CMS_UI.hideLoader();
+    }
   }
 };
 </script>

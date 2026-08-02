@@ -24,7 +24,8 @@ const Session = {
       role: role,
       createdAt: nowMs,
       expiresAt: nowMs + durationMs,
-      lastActivity: nowMs
+      lastActivity: nowMs,
+      rememberMe: rememberMe
     };
 
     const sessionString = JSON.stringify(sessionData);
@@ -70,7 +71,7 @@ const Session = {
 
       // 2. Check Idle Timeout
       const idleLimitMs = AUTH_CONFIG.IDLE_TIMEOUT_MINS * 60 * 1000;
-      if (nowMs - sessionData.lastActivity > idleLimitMs) {
+      if (!sessionData.rememberMe && (nowMs - sessionData.lastActivity > idleLimitMs)) {
         this.destroy(token);
         return null;
       }
@@ -165,7 +166,7 @@ const Session = {
           }
 
           // Expiry Check
-          if (nowMs > sessionData.expiresAt || (nowMs - sessionData.lastActivity > idleLimitMs)) {
+          if (nowMs > sessionData.expiresAt || (!sessionData.rememberMe && (nowMs - sessionData.lastActivity > idleLimitMs))) {
             isExpired = true;
           }
 
