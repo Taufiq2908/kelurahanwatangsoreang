@@ -85,7 +85,7 @@ window.PetaList = {
               <button class="icon-button text-blue-600 hover:bg-blue-50" onclick="if(window.PetaForm) window.PetaForm.showForm('${item.id}'); else CMS_UI.toast('Module Form belum dimuat', 'error');" title="Edit">
                 <span class="material-icons-outlined text-[18px]">edit</span>
               </button>
-              <button class="icon-button text-rose-600 hover:bg-rose-50 ml-1" onclick="if(window.PetaList.deleteItem) window.PetaList.deleteItem('${item.id}', '${(item.name || '').replace(/'/g, "\\'")}'); else CMS_UI.toast('Module belum dimuat', 'error');" title="Hapus">
+              <button class="icon-button text-rose-600 hover:bg-rose-50 ml-1" onclick="if(window.PetaList.deleteItem) window.PetaList.deleteItem('${item.id}', '${String(item.name || '').replace(/'/g, "\\'")}'); else CMS_UI.toast('Module belum dimuat', 'error');" title="Hapus">
                 <span class="material-icons-outlined text-[18px]">delete</span>
               </button>
             </td>

@@ -24,13 +24,13 @@ window.Module_Peta = {
       document.getElementById('tab-lokasi').onclick = () => { 
         window.PetaState.activeTab = 'lokasi'; 
         window.PetaState.view = 'list'; 
-        this.render(document.querySelector('#app-content')); 
+        this.render(document.querySelector('#main-content')); 
       };
       
       document.getElementById('tab-kategori').onclick = () => { 
         window.PetaState.activeTab = 'kategori'; 
         window.PetaState.catView = 'list'; 
-        this.render(document.querySelector('#app-content')); 
+        this.render(document.querySelector('#main-content')); 
       };
     }
     
