@@ -2,7 +2,7 @@
  * Google Sheets → Google Apps Script → React API Service
  */
 
-const API_URL = import.meta.env.VITE_GOOGLE_SHEET_API_URL || 'https://script.google.com/macros/s/AKfycbyc9gjs5Ai910ZPmqj6OwNFTI_G4VGYdRWrlLI7EtKi-Z119QNg2N5sInxMceTrH2Id/exec';
+const API_URL = import.meta.env.VITE_GOOGLE_SHEET_API_URL || 'https://script.google.com/macros/s/AKfycby-sSBO_6grlgagi5BrHe2c3dFLb9vYh2S3jaycQcv-TbN02dFDLcbpwPO92_mNZI0u/exec';
 
 // Simple in-memory cache
 const cache = new Map()
