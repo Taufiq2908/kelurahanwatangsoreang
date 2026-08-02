@@ -92,7 +92,7 @@ function MobileDrawer({ open, onClose, currentPath }) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -12 }}
             transition={{ type: 'spring', stiffness: 380, damping: 32 }}
-            className="fixed top-14 left-0 right-0 bottom-0 z-50 bg-white shadow-xl overflow-hidden md:hidden flex flex-col"
+            className="fixed top-14 left-0 right-0 bottom-0 z-50 bg-white shadow-xl overflow-hidden lg:hidden flex flex-col"
           >
             {/* Drawer header */}
             <div className="px-5 pt-4 pb-3 border-b border-surface-100 flex-shrink-0">
@@ -271,7 +271,7 @@ export default function Header() {
             {/* ── Mobile hamburger ─────────────────────────────────────────── */}
             <button
               id="mobile-menu-button"
-              className="md:hidden w-10 h-10 flex items-center justify-center rounded-xl bg-surface-50 hover:bg-surface-100 active:bg-surface-200 transition-colors duration-200 mr-1"
+              className="lg:hidden w-10 h-10 flex items-center justify-center rounded-xl bg-surface-50 hover:bg-surface-100 active:bg-surface-200 transition-colors duration-200 mr-1"
               onClick={() => setMobileOpen((v) => !v)}
               aria-label={mobileOpen ? 'Tutup menu' : 'Buka menu'}
               aria-expanded={mobileOpen}
