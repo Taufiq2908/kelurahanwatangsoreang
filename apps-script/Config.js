@@ -34,7 +34,7 @@ const CMS_CONFIG = {
   },
   webApp: {
     title: 'CMS Kelurahan Watang Soreang',
-    publicWebsiteUrl: 'https://watangsoreang.parepare.go.id',
+    publicWebsiteUrl: 'https://kelurahanwatangsoreang.web.id',
     allowedEmailKey: 'allowed_email',
     allowedEmailCategory: 'Security',
     navigation: [
