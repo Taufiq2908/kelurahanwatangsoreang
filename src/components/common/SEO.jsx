@@ -1,75 +1,49 @@
-/**
- * SEO.jsx — Per-page title, description, and Open Graph tag setter.
- * Works by directly mutating document.head meta tags via useEffect.
- * No external library dependency.
- */
-
-import { useEffect } from 'react'
+import { Helmet } from 'react-helmet-async'
 
 const SITE_NAME = 'Kelurahan Watang Soreang'
-const SITE_URL = 'https://watangsoreang.parepare.go.id'
-
+const SITE_URL = 'https://kelurahanwatangsoreang.web.id'
 const DEFAULT_META = {
-  title: SITE_NAME,
+  title: 'Website Resmi Pemerintah Kota Parepare',
   description:
-    'Portal Digital resmi Kelurahan Watang Soreang, Kecamatan Soreang, Kota Parepare, Sulawesi Selatan. Layanan publik, berita, pengumuman, aspirasi, dan edukasi lingkungan.',
+    'Website resmi Kelurahan Watang Soreang yang menyediakan informasi kelurahan, pelayanan publik, berita, kegiatan masyarakat, data wilayah, UMKM, dan informasi terkait perubahan iklim di Kota Parepare.',
 }
 
-function setMetaTag(attr, key, value) {
-  let el = document.querySelector(`meta[${attr}="${key}"]`)
-  if (!el) {
-    el = document.createElement('meta')
-    el.setAttribute(attr, key)
-    document.head.appendChild(el)
-  }
-  el.setAttribute('content', value)
-}
-
-/**
- * @param {Object} props
- * @param {string} [props.title]          Page title (without site name)
- * @param {string} [props.description]    Page meta description
- * @param {string} [props.path]           Canonical path e.g. "/berita"
- * @param {string} [props.type]           OG type ("website" | "article")
- */
 export default function SEO({
   title,
   description = DEFAULT_META.description,
   path = '',
   type = 'website',
+  schema = null,
+  image = '/og-image.png'
 }) {
-  const fullTitle = title ? `${title} | ${SITE_NAME}` : DEFAULT_META.title
+  const fullTitle = title ? `${title} | ${SITE_NAME}` : `${SITE_NAME} | ${DEFAULT_META.title}`
   const canonical = `${SITE_URL}${path}`
+  const fullImage = image.startsWith('http') ? image : `${SITE_URL}${image}`
 
-  useEffect(() => {
-    // Document title
-    document.title = fullTitle
+  return (
+    <Helmet>
+      <title>{fullTitle}</title>
+      <meta name="description" content={description} />
+      <link rel="canonical" href={canonical} />
 
-    // Standard meta
-    setMetaTag('name', 'description', description)
+      <meta property="og:title" content={fullTitle} />
+      <meta property="og:description" content={description} />
+      <meta property="og:url" content={canonical} />
+      <meta property="og:type" content={type} />
+      <meta property="og:site_name" content={SITE_NAME} />
+      <meta property="og:locale" content="id_ID" />
+      <meta property="og:image" content={fullImage} />
 
-    // Open Graph
-    setMetaTag('property', 'og:title', fullTitle)
-    setMetaTag('property', 'og:description', description)
-    setMetaTag('property', 'og:url', canonical)
-    setMetaTag('property', 'og:type', type)
-    setMetaTag('property', 'og:site_name', SITE_NAME)
-    setMetaTag('property', 'og:locale', 'id_ID')
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:title" content={fullTitle} />
+      <meta name="twitter:description" content={description} />
+      <meta name="twitter:image" content={fullImage} />
 
-    // Twitter Card
-    setMetaTag('name', 'twitter:card', 'summary')
-    setMetaTag('name', 'twitter:title', fullTitle)
-    setMetaTag('name', 'twitter:description', description)
-
-    // Canonical link
-    let link = document.querySelector('link[rel="canonical"]')
-    if (!link) {
-      link = document.createElement('link')
-      link.rel = 'canonical'
-      document.head.appendChild(link)
-    }
-    link.href = canonical
-  }, [fullTitle, description, canonical, type])
-
-  return null
+      {schema && (
+        <script type="application/ld+json">
+          {JSON.stringify(schema)}
+        </script>
+      )}
+    </Helmet>
+  )
 }

@@ -35,14 +35,32 @@ export default function ArticleDetailLayout({
 }) {
   const navigate = useNavigate()
 
+  const articleSchema = article ? {
+    "@context": "https://schema.org",
+    "@type": "NewsArticle",
+    "headline": article.title,
+    "image": [
+      article.image || article.imageUrl || "https://kelurahanwatangsoreang.web.id/og-image.png"
+    ],
+    "datePublished": article.publishedAt || article.date || new Date().toISOString(),
+    "dateModified": article.updatedAt || article.publishedAt || article.date || new Date().toISOString(),
+    "author": [{
+      "@type": "Person",
+      "name": article.author || "Admin Watang Soreang",
+      "url": "https://kelurahanwatangsoreang.web.id/profil"
+    }]
+  } : null;
+
   return (
     <div className="w-full">
       {article && (
         <SEO
           title={article.title}
-          description={article.description || `${article.title} — Kelurahan Watang Soreang`}
+          description={article.description || article.excerpt || `${article.title} — Kelurahan Watang Soreang`}
           path={`${typePath}/${article.slug || article.id}`}
           type="article"
+          image={article.image || article.imageUrl}
+          schema={articleSchema}
         />
       )}
 

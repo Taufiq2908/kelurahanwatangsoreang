@@ -182,6 +182,9 @@ export default function PetaPage() {
                                   <img 
                                     src={img} 
                                     alt={loc.name} 
+                                    width="400"
+                                    height="300"
+                                    loading="lazy"
                                     className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]" 
                                     onError={(e) => { e.target.style.display='none'; e.target.nextSibling.style.display='flex'; }}
                                   />

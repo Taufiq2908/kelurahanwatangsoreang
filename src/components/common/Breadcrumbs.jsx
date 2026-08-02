@@ -1,9 +1,35 @@
 import { Link } from 'react-router-dom'
 import { ChevronRight, Home } from 'lucide-react'
+import { Helmet } from 'react-helmet-async'
 
 export default function Breadcrumbs({ items }) {
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Beranda",
+        "item": "https://kelurahanwatangsoreang.web.id/"
+      },
+      ...items.map((item, index) => ({
+        "@type": "ListItem",
+        "position": index + 2,
+        "name": item.label,
+        "item": item.path ? `https://kelurahanwatangsoreang.web.id${item.path}` : undefined
+      }))
+    ]
+  };
+
   return (
-    <nav className="flex text-sm text-surface-500 font-medium mb-6 overflow-x-auto whitespace-nowrap scrollbar-hide py-1">
+    <>
+      <Helmet>
+        <script type="application/ld+json">
+          {JSON.stringify(schema)}
+        </script>
+      </Helmet>
+      <nav className="flex text-sm text-surface-500 font-medium mb-6 overflow-x-auto whitespace-nowrap scrollbar-hide py-1">
       <ol className="flex items-center gap-2">
         <li>
           <Link to="/" className="hover:text-emerald-700 transition-colors flex items-center gap-1.5">
@@ -32,5 +58,6 @@ export default function Breadcrumbs({ items }) {
         })}
       </ol>
     </nav>
+    </>
   )
 }

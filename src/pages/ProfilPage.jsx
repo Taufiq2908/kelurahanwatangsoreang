@@ -94,7 +94,7 @@ export default function ProfilPage() {
                   {loading ? (
                     <SkeletonLoader className="w-full h-full" />
                   ) : lurahPhoto ? (
-                    <img src={lurahPhoto} alt={lurahName} className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300" loading="lazy" />
+                    <img src={lurahPhoto} alt={lurahName} width="400" height="500" className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300" loading="lazy" />
                   ) : (
                     <div className="w-full h-full bg-gradient-to-br from-surface-200 to-surface-300 flex items-center justify-center text-white/90 text-6xl font-black uppercase tracking-tighter shadow-inner group-hover:scale-[1.02] transition-transform duration-300">
                       {getInitials(lurahName)}
@@ -290,7 +290,7 @@ export default function ProfilPage() {
                   >
                     <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center mb-4 md:mb-5 shadow-sm group-hover:scale-105 transition-transform duration-300 overflow-hidden">
                       {person.image ? (
-                        <img src={person.image} alt={person.name} className="w-full h-full object-cover" loading="lazy" />
+                        <img src={person.image} alt={person.name} width="300" height="400" className="w-full h-full object-cover" loading="lazy" />
                       ) : (
                         <span className="text-white text-xl md:text-2xl font-black">{getInitials(person.name)}</span>
                       )}

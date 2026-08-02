@@ -112,6 +112,22 @@ export default function FaqPage() {
     })
   }, [faqItems, search, activeCategory])
 
+  const faqSchema = useMemo(() => {
+    if (!faqs || !faqs.length) return null;
+    return {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": faqs.map(item => ({
+        "@type": "Question",
+        "name": item.question,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": item.answer
+        }
+      }))
+    }
+  }, [faqs])
+
   const handleToggle = (id) => {
     setOpenFaqId(prev => prev === id ? null : id)
   }
@@ -122,6 +138,7 @@ export default function FaqPage() {
         title="Tanya Jawab (FAQ)"
         description="Pertanyaan yang sering diajukan tentang layanan dan administrasi Kelurahan Watang Soreang, Kota Parepare."
         path="/faq"
+        schema={faqSchema}
       />
 
       <PageHeader 
