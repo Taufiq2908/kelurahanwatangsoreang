@@ -186,9 +186,11 @@ export default function ProfilPage() {
                   <SkeletonLoader className="h-4 w-4/5 mx-auto" />
                 </div>
               ) : (
-                <p className="text-surface-700 text-base md:text-lg leading-relaxed text-center font-medium">
-                  {sejarah}
-                </p>
+                <div className="space-y-6 text-surface-700 text-base md:text-lg leading-relaxed md:text-justify font-medium">
+                  {sejarah.split('\n').filter(p => p.trim() !== '').map((paragraph, index) => (
+                    <p key={index}>{paragraph}</p>
+                  ))}
+                </div>
               )}
             </motion.div>
           </div>
