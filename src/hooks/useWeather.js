@@ -2,8 +2,8 @@ import { useState, useEffect, useCallback } from 'react'
 import { fetchWeather } from '@/services/weatherApi'
 
 /**
- * useWeather — fetches and caches Open-Meteo data for Parepare.
- * The underlying service caches for 30 minutes, so hook calls are cheap.
+ * useWeather — fetches and caches WeatherAPI data for Parepare.
+ * The underlying service caches for 10 minutes.
  */
 export function useWeather() {
   const [data, setData] = useState(null)

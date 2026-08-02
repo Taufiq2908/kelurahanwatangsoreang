@@ -40,12 +40,12 @@ export default function CuacaPage() {
     <div className="w-full">
       <SEO
         title="Informasi Cuaca Parepare"
-        description="Prakiraan cuaca terkini Kota Parepare dan Kelurahan Watang Soreang. Data dari Open-Meteo."
+        description="Prakiraan cuaca terkini Kota Parepare dan Kelurahan Watang Soreang. Data dari WeatherAPI."
         path="/cuaca"
       />
       <PageHeader
         title="Informasi Cuaca"
-        subtitle="Prakiraan cuaca Kota Parepare berdasarkan data real-time dari Open-Meteo."
+        subtitle="Prakiraan cuaca Kota Parepare berdasarkan data real-time dari WeatherAPI."
         icon={CloudSun}
       />
 
@@ -116,10 +116,10 @@ export default function CuacaPage() {
             {/* Data source note */}
             <p className="text-center text-xs text-surface-400 font-medium">
               Data cuaca disajikan dari{' '}
-              <a href="https://open-meteo.com" target="_blank" rel="noopener noreferrer" className="text-sky-600 font-bold hover:underline">
-                Open-Meteo
+              <a href="https://www.weatherapi.com/" target="_blank" rel="noopener noreferrer" className="text-sky-600 font-bold hover:underline">
+                WeatherAPI
               </a>
-              {' '}· Diperbarui setiap 30 menit
+              {' '}• Diperbarui secara real-time
             </p>
           </div>
         </div>

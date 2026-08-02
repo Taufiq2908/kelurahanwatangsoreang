@@ -48,6 +48,15 @@ function processRecords(records, options) {
     result = result.slice(offset, offset + options.limit);
   }
 
+  // Strip heavy fields to prevent V8 RPC payload crash during list fetch
+  result = result.map(r => {
+    const clone = Object.assign({}, r);
+    delete clone.content;
+    delete clone.body;
+    delete clone.html_content;
+    return clone;
+  });
+
   return {
     items: result,
     total: total,
@@ -241,12 +250,15 @@ function cmsDeleteRecord(token, sheetName, id) {
       const rowIndex = i + 2;
       if (headers.includes('deleted_at')) {
         // Soft delete
-        sheet.getRange(rowIndex, headers.indexOf('deleted_at') + 1).setValue(toISO(now()));
+        const cell = sheet.getRange(rowIndex, headers.indexOf('deleted_at') + 1);
+        cell.clearDataValidations();
+        cell.setValue(toISO(now()));
       } else {
         // Fallback hard delete (should not happen with new schema)
         sheet.deleteRow(rowIndex);
       }
       clearApiCache(sheetName);
+      SpreadsheetApp.flush();
       Audit.logEvent('CMS', 'Delete ' + sheetName, (typeof session !== 'undefined' ? session.userId : 'SYSTEM'), 'User ' + session.userId + ' deleted record ' + id);
       return { success: true };
     }

@@ -1,7 +1,7 @@
 /**
  * weatherUtils.js
  * WMO weather code mappings, Indonesian labels, and format helpers.
- * Reference: https://open-meteo.com/en/docs#weathervariables
+ * Data is normalized by the backend to match these WMO codes.
  */
 
 // ─── WMO Weather Codes → Indonesian labels ────────────────────────────────────

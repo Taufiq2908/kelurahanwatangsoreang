@@ -100,8 +100,11 @@ window.Module_Aspirasi = (function() {
                 ${item.status}
               </span>
             </td>
-            <td class="p-4 text-right">
+            <td class="p-4 text-right flex justify-end items-center gap-2">
               <button class="btn-edit px-3 py-1.5 bg-white border border-surface-200 text-surface-700 hover:bg-surface-50 rounded-lg text-xs font-semibold shadow-sm transition-colors" data-id="${item.id}">Tinjau</button>
+              <button class="btn-delete p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors border border-transparent hover:border-rose-200" data-id="${item.id}" data-title="${item.tracking_code}" title="Hapus">
+                <span class="material-icons-outlined text-[18px]">delete</span>
+              </button>
             </td>
           </tr>
         `}).join('');
@@ -138,6 +141,26 @@ window.Module_Aspirasi = (function() {
     container.querySelectorAll('.btn-edit').forEach(btn => {
       btn.onclick = () => showForm(btn.dataset.id);
     });
+    
+    container.querySelectorAll('.btn-delete').forEach(btn => {
+      btn.onclick = () => deleteItem(btn.dataset.id, btn.dataset.title);
+    });
+  }
+
+  async function deleteItem(id, title) {
+    const confirmed = await CMS_UI.confirm('Hapus Laporan', `Laporan dengan kode "${title}" akan dipindahkan ke Data Terhapus. Lanjutkan?`, 'Ya, Hapus', 'btn-danger');
+    if (!confirmed) return;
+    
+    CMS_UI.showLoader('Menghapus laporan...');
+    try {
+      await CMS_API.deleteRecord('Laporan', id);
+      CMS_UI.toast('Laporan berhasil dihapus');
+      loadData();
+    } catch(e) {
+      CMS_UI.toast('Gagal menghapus: ' + e.message, 'error');
+    } finally {
+      CMS_UI.hideLoader();
+    }
   }
 
   async function showForm(id) {

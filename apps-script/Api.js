@@ -170,6 +170,9 @@ function handleApiRequest(e) {
          case 'getProfil':
            result = apiGetProfil(spreadsheet);
            break;
+         case 'getWeather':
+           result = getWeather();
+           break;
          case 'getLayanan':
            result = apiGetLayanan(spreadsheet);
            break;
