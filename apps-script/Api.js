@@ -268,7 +268,8 @@ function getSheetRecords(spreadsheet, sheetName, onlyPublished) {
   
   Logger.log("Sheet '" + sheetName + "' ditemukan. Membaca " + (lastRow - 1) + " baris data.");
   
-  const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  const originalHeaders = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  const headers = originalHeaders.map(h => String(h).trim().toLowerCase());
   const data = sheet.getRange(2, 1, lastRow - 1, lastCol).getValues();
   
   const records = [];
