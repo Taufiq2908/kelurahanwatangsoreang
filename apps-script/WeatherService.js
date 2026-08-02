@@ -25,7 +25,7 @@ function getWeather() {
     throw new Error('WEATHER_API_KEY is not set in Script Properties.');
   }
 
-  const url = `https://api.weatherapi.com/v1/forecast.json?key=${apiKey}&q=${LAT},${LNG}&days=3&aqi=yes&alerts=yes`;
+  const url = `https://api.weatherapi.com/v1/forecast.json?key=${apiKey}&q=${LAT},${LNG}&days=7&aqi=yes&alerts=yes`;
   
   let responseText = null;
   let success = false;
@@ -99,7 +99,7 @@ function normalizeWeather(raw) {
     }
   }
 
-  // Map daily (3 days)
+  // Map daily (7 days)
   const dailyData = forecastDays.map(day => {
     return {
       date: day.date,
