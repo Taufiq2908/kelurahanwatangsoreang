@@ -153,7 +153,7 @@ export default function LayananPage() {
       />
 
       <PageHeader 
-        title="Layanan Warga"
+        title="Layanan Publik"
         subtitle="Temukan informasi persyaratan dan prosedur pengurusan dokumen administrasi kependudukan di Kelurahan Watang Soreang."
         icon={FileText}
       />

@@ -16,7 +16,7 @@ export default function PopularServices() {
     <section className="pt-8 md:pt-12 pb-16 md:pb-24 bg-surface-50 border-b border-surface-200">
       <div className="container-editorial px-6 md:px-12">
         <SectionHeader 
-          label="Layanan Warga"
+          label="Layanan Publik"
           title="Direktori Layanan"
           description="Dokumen administrasi kependudukan yang paling sering diurus warga."
           linkText="Lihat Semua Layanan"
